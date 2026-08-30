@@ -46,3 +46,37 @@ SAMPLE_REQUIREMENTS = {
          "category": "experience", "years": None},
     ],
 }
+
+
+def planner_reply(tool: str, why: str = "because the trace says so", **args: Any) -> LLMReply:
+    """A planner decision. ``tool='finish'`` ends the run."""
+    payload: dict[str, Any] = {"why": why}
+    payload.update(args)
+    return tool_reply(tool, payload, in_tok=200, out_tok=40)
+
+
+class Boom(Exception):
+    """A non-transient failure."""
+
+
+class RateLimitError(Exception):
+    """Named to match the SDK class, which is what classify_error keys on."""
+
+
+class APITimeoutError(Exception):
+    pass
+
+
+class SlowClient:
+    """A client that always takes longer than the timeout allows."""
+
+    def __init__(self, delay: float = 5.0):
+        self.delay = delay
+        self.calls: list[dict[str, Any]] = []
+
+    def complete(self, **kwargs: Any) -> LLMReply:
+        import time as _time
+
+        self.calls.append(kwargs)
+        _time.sleep(self.delay)
+        return LLMReply(text="too late")

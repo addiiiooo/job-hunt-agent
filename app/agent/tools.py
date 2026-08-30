@@ -200,3 +200,26 @@ def retrieve_evidence(requirement: str, k: int = 5, *, index: Any) -> list[Any]:
     if not requirement or not requirement.strip():
         raise AgentError(ErrorKind.TOOL_EXECUTION, "requirement text is empty")
     return index.query(requirement, k=k)
+
+
+# ---------------------------------------------------------------------------
+# Planner-facing schemas
+#
+# These describe the tools as *actions the planner can choose*, which is not the
+# same thing as the schema a tool's output is validated against. Where an
+# argument is fixed for the whole run (the job description) or is large derived
+# state (the evidence map), the planner does not pass it: the loop supplies it
+# from run state. Round-tripping a corpus through the planner would burn tokens
+# and — worse — give the model an opportunity to paraphrase evidence on the way
+# past, which is exactly what the guardrail exists to prevent.
+# ---------------------------------------------------------------------------
+
+PARSE_TOOL_SCHEMA: dict[str, Any] = {
+    "name": "parse_requirements",
+    "description": (
+        "Read the job description for this run and extract its requirements as "
+        "atomic hard/preferred items with normalised years. Call once, first. "
+        "Takes no arguments — the job description is fixed for the run."
+    ),
+    "input_schema": {"type": "object", "properties": {}, "required": []},
+}
