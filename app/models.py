@@ -159,3 +159,29 @@ class PlannedAction(BaseModel):
     @property
     def is_finish(self) -> bool:
         return self.tool is None
+
+
+# --------------------------------------------------------------------------
+# Constrained model outputs
+#
+# The model is never allowed to emit an `Evidence` object. It emits doc_ids it
+# wants to cite, and the server rehydrates the snippet and score from what
+# retrieval actually returned. A model that cannot author an evidence object
+# cannot author a plausible-looking fake one.
+# --------------------------------------------------------------------------
+
+
+class ScoringVerdict(BaseModel):
+    requirement_text: str
+    status: Status
+    cited_doc_ids: list[str] = Field(default_factory=list)
+    rationale: str
+
+
+class ScoringOutput(BaseModel):
+    verdicts: list[ScoringVerdict] = Field(default_factory=list)
+    summary: str = ""
+
+
+class DraftingOutput(BaseModel):
+    suggestions: list[BulletSuggestion] = Field(default_factory=list)

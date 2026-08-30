@@ -20,9 +20,11 @@ from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from app.agent import guardrail as guardrail_mod
 from app.agent import planner as planner_mod
 from app.agent import tools as tools_mod
 from app.agent.client import ClaudeClient, classify_error, is_transient
+from app.agent.tools import ev_key
 from app.agent.trace import Trace, timed
 from app.config import Settings
 from app.models import (
@@ -53,6 +55,7 @@ class RunState:
     evidence_map: dict[str, list[Evidence]] = field(default_factory=dict)
     report: MatchReport | None = None
     suggestions: list[BulletSuggestion] | None = None
+    guardrail_rejections: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -99,11 +102,55 @@ def _h_retrieve_evidence(state: RunState, args: dict, ctx: Context, repair_note:
     requirement = str(args.get("requirement", "")).strip()
     k = int(args.get("k") or 5)
     hits = tools_mod.retrieve_evidence(requirement, k=k, index=ctx.index)
-    state.evidence_map[requirement] = hits
+    state.evidence_map[ev_key(requirement)] = hits
     if not hits:
         return "no matching passages (corpus has no lexical overlap)", 0, 0
     top = hits[0]
     return f"{len(hits)} passages, top {top.doc_id} @ {top.score}", 0, 0
+
+
+def _h_score_match(state: RunState, args: dict, ctx: Context, repair_note: str | None):
+    if state.requirements is None:
+        raise AgentError(
+            ErrorKind.TOOL_EXECUTION,
+            "cannot score before parse_requirements has succeeded",
+        )
+    report, i, o = tools_mod.score_match(
+        state.requirements,
+        state.evidence_map,
+        client=ctx.client,
+        settings=ctx.settings,
+        repair_note=repair_note,
+    )
+    state.report = report
+    return f"{report.hard_met}/{report.hard_total} hard requirements met", i, o
+
+
+def _h_draft_bullets(state: RunState, args: dict, ctx: Context, repair_note: str | None):
+    if state.report is None:
+        raise AgentError(
+            ErrorKind.TOOL_EXECUTION,
+            "cannot draft bullets before score_match has produced a report",
+        )
+    gaps = state.report.gaps()
+    drafted, i, o = tools_mod.draft_bullets(
+        gaps,
+        state.evidence_map,
+        client=ctx.client,
+        settings=ctx.settings,
+        repair_note=repair_note,
+    )
+
+    # The guardrail runs here: after drafting, before anything is shown.
+    outcome = guardrail_mod.enforce(drafted, state.evidence_map)
+    state.suggestions = outcome.suggestions
+    state.guardrail_rejections = outcome.rejected
+
+    refused = sum(1 for s in outcome.suggestions if s.refused)
+    summary = f"{len(outcome.suggestions)} suggestions, {refused} refused"
+    if outcome.rejected_count:
+        summary += f" ({outcome.rejected_count} rewritten by the grounding validator)"
+    return summary, i, o
 
 
 def build_registry(ctx: Context) -> dict[str, ToolSpec]:
@@ -112,6 +159,8 @@ def build_registry(ctx: Context) -> dict[str, ToolSpec]:
         "retrieve_evidence": ToolSpec(
             tools_mod.RETRIEVE_TOOL_SCHEMA, _h_retrieve_evidence, repairable=False
         ),
+        "score_match": ToolSpec(tools_mod.SCORE_TOOL_SCHEMA, _h_score_match),
+        "draft_bullets": ToolSpec(tools_mod.DRAFT_TOOL_SCHEMA, _h_draft_bullets),
     }
 
 
@@ -216,7 +265,7 @@ def _goal(state: RunState, settings: Settings) -> str:
             f"{len(reqs.hard())} hard, role '{reqs.role_title}'"
         )
         for r in reqs.requirements:
-            got = state.evidence_map.get(r.text)
+            got = state.evidence_map.get(ev_key(r.text))
             if got is None:
                 mark = "no evidence retrieved yet"
             elif not got:

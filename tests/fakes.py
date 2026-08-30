@@ -80,3 +80,19 @@ class SlowClient:
         self.calls.append(kwargs)
         _time.sleep(self.delay)
         return LLMReply(text="too late")
+
+
+# A deliberately small requirement set, used to script a full four-tool run.
+R_PYTHON = "Strong Python"
+R_POSTGRES = "Production PostgreSQL including query plans and indexing"
+R_K8S = "Kubernetes in production"
+
+SMALL_REQUIREMENTS = {
+    "role_title": "Backend Engineer, Payments Platform",
+    "company": "Northwind Technologies",
+    "requirements": [
+        {"text": R_PYTHON, "kind": "hard", "category": "language", "years": None},
+        {"text": R_POSTGRES, "kind": "hard", "category": "platform", "years": None},
+        {"text": R_K8S, "kind": "preferred", "category": "platform", "years": None},
+    ],
+}
