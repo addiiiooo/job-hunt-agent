@@ -16,6 +16,7 @@ from fastapi.templating import Jinja2Templates
 
 from app import health
 from app.config import get_settings
+from app.corpus.index import CorpusIndex
 from app.db import RunStore
 
 _HERE = Path(__file__).resolve().parent
@@ -27,7 +28,7 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.settings = settings
     app.state.store = RunStore(settings.db_path)
-    app.state.index = None  # populated in phase 3
+    app.state.index = CorpusIndex.from_directory(settings.corpus_dir)
     yield
 
 

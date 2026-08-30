@@ -154,3 +154,49 @@ def parse_requirements(
         model_cls=Requirements,
         repair_note=repair_note,
     )
+
+
+# ---------------------------------------------------------------------------
+# Tool 2 — retrieve_evidence
+# ---------------------------------------------------------------------------
+
+RETRIEVE_TOOL_SCHEMA = {
+    "name": "retrieve_evidence",
+    "description": (
+        "Search the candidate's own corpus (resume and project write-ups) for "
+        "passages relevant to one requirement. Lexical BM25 search, no model "
+        "call. Returns the top-k passages with scores, or an empty list when "
+        "nothing in the corpus overlaps. Call this once per requirement you "
+        "intend to score."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "requirement": {
+                "type": "string",
+                "description": "The requirement text to search for, verbatim from parse_requirements.",
+            },
+            "k": {
+                "type": "integer",
+                "description": "How many passages to return. Default 5.",
+                "minimum": 1,
+                "maximum": 20,
+            },
+        },
+        "required": ["requirement"],
+    },
+}
+
+
+def retrieve_evidence(requirement: str, k: int = 5, *, index: Any) -> list[Any]:
+    """BM25 over the corpus. Top-k with scores. No LLM call.
+
+    An empty return is a real answer — it means nothing in the corpus overlaps
+    lexically with this requirement — and it is what makes a refusal downstream
+    honest rather than decorative.
+    """
+    if index is None or index.is_empty():
+        raise AgentError(ErrorKind.CORPUS_EMPTY, "corpus index is empty; nothing to retrieve from")
+    if not requirement or not requirement.strip():
+        raise AgentError(ErrorKind.TOOL_EXECUTION, "requirement text is empty")
+    return index.query(requirement, k=k)
