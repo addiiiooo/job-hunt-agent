@@ -224,3 +224,145 @@ that is never built in CI is a Dockerfile that is broken and nobody knows yet.
 **Code stays 3.10-compatible (`timezone.utc`, no `StrEnum`), and `UP017` is
 disabled in `ruff.toml` to keep it that way.** The container and CI both run
 3.11; nothing is given up by also being runnable on 3.10.
+
+---
+
+# Finish-and-ship pass
+
+Decisions from the second brief. The audit that preceded it is in
+[AUDIT.md](AUDIT.md).
+
+## Defects
+
+**`Evidence` gained `relevant`, `score_normalized` and `cited`; the brief asked
+for the first two.** `cited` is additive and necessary: once the verdict carries
+*everything retrieved* rather than only what the model cited, the distinction
+between "retrieved" and "the model leaned on this" has nowhere else to live, and
+losing it would be a regression in exactly the property this project sells.
+
+**The diagnosis in the brief was not the cause.** There was no relevance
+threshold in `score_match` and the evidence-map keys already went through
+`ev_key()`. The real cause was `_assemble_report` putting only the cited
+passages on the verdict, so a `gap` with an empty `cited_doc_ids` rendered as
+"no evidence retrieved" even when retrieval had returned three passages. The
+prescribed fix addresses it; the diagnosis is recorded here because the next
+person to read the code will otherwise go looking for a threshold that never
+existed.
+
+**Normalisation is per-query, so the top hit is always 100%.** Dividing by the
+query's own top score is what the brief specifies and it is the only honest
+option without a labelled set — raw BM25 is unbounded and incomparable across
+queries. The cost is that the percentage answers "how close to the best
+available evidence for this requirement", not "how good is this evidence". Named
+in the README limitations rather than hidden behind a nicer-looking number.
+
+**Weak passages are marked, not dropped; only a zero score is excluded.** A zero
+means no lexical overlap at all, which is genuinely nothing. Anything above zero
+is returned and flagged, because the report has to be able to say "we looked and
+found only this".
+
+**The drafting model emits `DraftedBullet`, which has no `refusal_source`.**
+Provenance is a fact about who refused. The model is not a witness to it, so it
+is not given a field to claim it in. `draft_bullets` stamps `model` on refusals
+in its own response; `guardrail.enforce` stamps `validator` on its overrides.
+
+**`total_latency_ms` is the sum of step latencies, not wall clock.** Wall clock
+includes loop overhead the trace cannot account for, and a total that does not
+reconcile with the rows above it is a total nobody can audit. The small amount of
+overhead that disappears is the honest tradeoff.
+
+## Client
+
+**`FakeClient` became `ScriptedClient`, with the old name kept as an alias.**
+The rename is right — it is a supported runtime mode, not a test double — and
+one alias line costs nothing.
+
+**`LLM_CLIENT=scripted` is a real runtime mode, not a stub.**
+`app/agent/demo_script.py` canned responses run over *live* retrieval against
+whatever corpus is loaded, so the demo improves when the corpus does. This makes
+the deployed URL demonstrable with no API key and no spend — see the deployment
+decision below. It is one module beyond the original layout, and it earns its
+place: a config flag whose second value produces a broken app is not a config
+flag.
+
+**Scripted mode shows a banner on the result page.** Presenting canned model
+output as a live run would be the same class of dishonesty the guardrail exists
+to prevent.
+
+**Retry scope is decided by status code first, class name second.** The brief
+says 429 and 5xx only, and `getattr(exc, "status_code", None)` is authoritative
+where the SDK provides it — so a class named `RateLimitError` carrying a 400 is
+not retried. Timeouts and connection failures are also retried, which is
+slightly broader than "429 and 5xx": from the caller's side they are
+indistinguishable from a 5xx, and the original brief required retrying them.
+Recorded here because it is a deliberate widening, not an oversight.
+
+## Corpus and health
+
+**`/health` fails on placeholder text, not just on an empty corpus.** A corpus
+of TODOs indexes, retrieves and scores — it fails silently and looks like it
+works, which is worse than failing loudly. The check greps for the literal
+`TODO: replace` and names the offending documents.
+
+**The API key stops being a health dependency in scripted mode.** Reporting a
+missing key as a failure when nothing will ever call the API is a false alarm,
+and a false alarm in a health check trains people to ignore it.
+
+## Extension
+
+**Permissions are `activeTab`, `scripting`, `storage` — one more than the brief
+allows.** `scripting` is the API permission required to call
+`chrome.scripting.executeScript` at all; it grants no site access on its own,
+and the access still comes from `activeTab`, i.e. the tab the user is looking at
+after they click. The alternative — a declared content script — needs
+`matches` and is *broader*, so the strict reading of the brief produces a less
+private extension. Recorded as a deliberate deviation.
+
+**No host permissions at install time.** `optional_host_permissions` plus a
+runtime `chrome.permissions.request` for the single origin the user types into
+settings. The extension ships able to talk to nothing.
+
+**No background service worker.** With the popup closed the extension runs no
+code, which makes "no background scraping" a structural fact rather than a
+promise. `tests/test_extension.py` asserts it, along with the absence of every
+auto-submit and polling pattern.
+
+**Icons are generated by a committed script.** `extension/icons/make_icons.py`
+writes the PNGs with stdlib zlib — no binary blobs whose provenance nobody can
+check, and no image dependency.
+
+## Deploy
+
+**The recommended public deployment runs `LLM_CLIENT=scripted`.** A public
+endpoint with no auth that calls a paid API on every request is a bill anyone
+can run up for you, and there is no rate limiting in this app. Everything a
+reviewer inspects is real in scripted mode. The live variant is one env var, for
+running behind auth or locally.
+
+**`az acr build` rather than a local `docker build` and push.** It removes the
+local Docker daemon from the deploy path entirely, which also means CI needs no
+registry credentials beyond the Azure login it already has.
+
+**`min-replicas 1`.** Scale-to-zero gives the first visitor a multi-second cold
+start, and for a portfolio URL the first visitor is the entire audience.
+
+**The API key is a Container Apps secret referenced as `secretref:`.** It is
+never in the image, never in the env-var definition, and rotatable without a
+redeploy.
+
+**Deploy is `workflow_dispatch` plus a narrow push trigger.** Auto-deploying
+every push to `main` is an efficient way to ship a broken demo in the middle of
+an interview.
+
+## Docs and samples
+
+**The README GIF is generated, not hand-recorded.** `scripts/record_demo.py`
+starts the app, drives a real Chromium through the form, and composes the
+frames. It cannot drift from the code, and it is one command to regenerate after
+changing the corpus.
+
+**`samples/` holds `demo.gif` and `scripted-run.html`; `live-run.html` is
+absent.** No API key was available in the environment that built this, so no
+live-model artefact exists. Shipping a scripted render labelled as a live one
+would have been the easy lie; the file is simply not there, and `samples/README.md`
+says what produces it.
