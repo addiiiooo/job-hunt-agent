@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Match report — Job Hunt Agent</title>
+  <style>
+:root {
+  --bg: #fbfbf9; --fg: #1a1a18; --muted: #6b6b66; --line: #e2e2dc;
+  --card: #ffffff; --met: #1c6b3f; --met-bg: #e6f2ea;
+  --partial: #8a6100; --partial-bg: #fdf1d8; --gap: #9a2c2c; --gap-bg: #fbe9e9;
+  --accent: #2b4c7e;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a; --fg: #ececea; --muted: #9a9a94; --line: #34343a;
+    --card: #1e1e23; --met: #7cd6a3; --met-bg: #14301f;
+    --partial: #e9c46a; --partial-bg: #33290f; --gap: #f08a8a; --gap-bg: #341818;
+    --accent: #8fb2e8;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+header { padding: 32px 0 8px; }
+.brand { font-size: 20px; font-weight: 650; color: var(--fg); text-decoration: none; letter-spacing: -0.01em; }
+.tagline { color: var(--muted); margin: 6px 0 0; max-width: 62ch; }
+main { padding: 20px 0 48px; }
+footer { border-top: 1px solid var(--line); padding: 16px 0 40px; color: var(--muted); font-size: 13px; }
+label { display: block; font-weight: 600; margin-bottom: 6px; }
+textarea { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card); color: var(--fg); font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+button { margin-top: 12px; padding: 10px 20px; font-size: 15px; font-weight: 600;
+  background: var(--accent); color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
+button:hover { filter: brightness(1.08); }
+.note { color: var(--muted); font-size: 13px; }
+
+/* ---- result page ---- */
+h2 { font-size: 17px; margin: 34px 0 10px; letter-spacing: -0.01em; }
+section + section { border-top: 1px solid var(--line); }
+.headline { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+.headline .score { font-size: 26px; margin: 0; letter-spacing: -0.02em; }
+.headline .role { margin: 4px 0 0; color: var(--muted); font-weight: 600; }
+.headline .summary { margin: 10px 0 0; max-width: 72ch; }
+.banner { margin: 12px 0 0; padding: 8px 12px; border-radius: 6px;
+  background: var(--partial-bg); color: var(--partial); font-size: 13px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+tfoot td { border-bottom: 0; color: var(--muted); font-size: 12.5px; }
+
+.reqs td:first-child { width: 26%; }
+.reqs td:nth-child(2) { width: 84px; }
+.reqs td:last-child { width: 26%; }
+.req-text { display: block; font-weight: 600; }
+.tags { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+.rationale { color: var(--fg); }
+
+.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.pill-met { background: var(--met-bg); color: var(--met); }
+.pill-partial { background: var(--partial-bg); color: var(--partial); }
+.pill-gap { background: var(--gap-bg); color: var(--gap); }
+
+.ev { margin: 0 0 10px; }
+.ev figcaption { font-size: 11.5px; color: var(--muted); }
+.ev blockquote { margin: 3px 0 0; padding-left: 10px; border-left: 2px solid var(--line); color: var(--muted); }
+.ev .score { opacity: 0.75; }
+.none { color: var(--muted); font-style: italic; }
+
+.bullets { list-style: none; padding: 0; margin: 0; }
+.bullets li { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; background: var(--card); }
+.bullets li.refused { border-left: 3px solid var(--gap); }
+.bullets li.drafted { border-left: 3px solid var(--met); }
+.bullets .for { margin: 0 0 6px; font-size: 11.5px; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--muted); }
+.bullets .bullet { margin: 0; font-size: 14.5px; }
+.bullets .refusal { margin: 0; color: var(--gap); }
+.bullets .grounded { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); }
+
+.trace { font-size: 13px; }
+.trace td.num { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--muted); }
+.trace .why { max-width: 30ch; }
+.trace .args { font: 11.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted); margin-top: 3px; word-break: break-word; }
+.trace .result-summary { margin-top: 4px; color: var(--muted); }
+.trace tr.step-error { background: var(--gap-bg); }
+.err { color: var(--gap); font-weight: 600; }
+.rid { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+
+code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.back { display: inline-block; margin-top: 24px; color: var(--accent); }
+
+@media (max-width: 720px) {
+  table, thead, tbody, tfoot, tr, th, td { display: block; }
+  thead { display: none; }
+  tr { border-bottom: 1px solid var(--line); padding: 8px 0; }
+  td { border: 0; padding: 4px 0; }
+  .reqs td:first-child, .reqs td:nth-child(2), .reqs td:last-child { width: auto; }
+}
+
+</style>
+</head>
+<body>
+<p style="max-width:1000px;margin:0 auto;padding:10px 20px;font:13px system-ui;opacity:.7">Static sample, generated by <code>scripts/render_sample.py</code> from the offline scripted client. The numbers and trace below are a real run.</p>
+  <header class="wrap">
+    <a class="brand" href="/">Job&nbsp;Hunt&nbsp;Agent</a>
+    <p class="tagline">Paste a job description. Get a grounded match report, a full trace, and bullets it refuses to invent.</p>
+  </header>
+  <main class="wrap">
+    
+
+
+
+<section class="headline">
+  <p class="score"><strong>1 / 2</strong> hard requirements met</p>
+  <p class="role">Backend Engineer, Payments Platform</p>
+  <p class="summary">Solid Python and PostgreSQL evidence. No Kubernetes anywhere in the corpus.</p>
+  
+</section>
+
+<section>
+  <h2>Requirements</h2>
+  
+  <table class="reqs">
+    <thead>
+      <tr><th scope="col">Requirement</th><th scope="col">Status</th><th scope="col">Cited evidence</th><th scope="col">Rationale</th></tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>
+          <span class="req-text">Strong Python</span>
+          <span class="tags">hard · language</span>
+        </td>
+        <td><span class="pill pill-met">met</span></td>
+        <td>
+          
+            
+            <figure class="ev">
+              <figcaption><code>resume#summary</code> <span class="score">0.9093</span></figcaption>
+              <blockquote>Resume › Summary — TODO: replace. Backend engineer working primarily in Python, with production ownership of HTTP services and the infrastructure they run on.</blockquote>
+            </figure>
+            
+          
+        </td>
+        <td class="rationale">resume describes building FastAPI services in Python</td>
+      </tr>
+      
+      <tr>
+        <td>
+          <span class="req-text">Production PostgreSQL including query plans and indexing</span>
+          <span class="tags">hard · platform</span>
+        </td>
+        <td><span class="pill pill-partial">partial</span></td>
+        <td>
+          
+            
+            <figure class="ev">
+              <figcaption><code>resume#databases</code> <span class="score">7.8021</span></figcaption>
+              <blockquote>Resume › Databases — TODO: replace. Worked with PostgreSQL in production: schema design, migrations, composite indexes, and reading query plans with EXPLAIN ANALYZE to remove sequential scans from hot paths.</blockquote>
+            </figure>
+            
+          
+        </td>
+        <td class="rationale">query-plan work is evidenced, but scale is unstated</td>
+      </tr>
+      
+      <tr>
+        <td>
+          <span class="req-text">Kubernetes in production</span>
+          <span class="tags">preferred · platform</span>
+        </td>
+        <td><span class="pill pill-gap">gap</span></td>
+        <td>
+          
+            <span class="none">no evidence retrieved</span>
+          
+        </td>
+        <td class="rationale">no Kubernetes experience appears in the corpus</td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+</section>
+
+<section>
+  <h2>Suggested bullets</h2>
+  <p class="note">Refusals are shown, not hidden. A refusal means the corpus has no evidence for that requirement — which is the honest answer, and the one that survives an interview.</p>
+  
+  <ul class="bullets">
+    
+    <li class="drafted">
+      <p class="for">for: Production PostgreSQL including query plans and indexing</p>
+      
+        <p class="bullet">Removed sequential scans from hot paths by reading query plans with EXPLAIN ANALYZE.</p>
+        <p class="grounded">grounded in <code>resume#databases</code></p>
+      
+    </li>
+    
+    <li class="refused">
+      <p class="for">for: Kubernetes in production</p>
+      
+        <p class="refusal"><strong>Refused</strong> — failed grounding validation</p>
+      
+    </li>
+    
+  </ul>
+  
+</section>
+
+<section>
+  <h2>Trace</h2>
+  <p class="note">Every step the agent took, including the ones that failed. The planner chose each of these; nothing here is a fixed sequence.</p>
+  <table class="trace">
+    <thead>
+      <tr>
+        <th scope="col">#</th><th scope="col">Tool</th><th scope="col">Why chosen</th>
+        <th scope="col">Latency</th><th scope="col">Tokens</th><th scope="col">Error</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr class="">
+        <td class="num">1</td>
+        <td>
+          <code>parse_requirements</code>
+          
+          <div class="result-summary">3 requirements (2 hard, 1 preferred) for &#39;Backend Engineer, Payments Platform&#39;</div>
+        </td>
+        <td class="why">the job description is not parsed yet</td>
+        <td class="num">0 ms</td>
+        <td class="num">320&nbsp;in / 100&nbsp;out</td>
+        <td>—</td>
+      </tr>
+      
+      <tr class="">
+        <td class="num">2</td>
+        <td>
+          <code>retrieve_evidence</code>
+          <div class="args">{&#39;requirement&#39;: &#39;Strong Python&#39;, &#39;k&#39;: 3}</div>
+          <div class="result-summary">3 passages, top resume#summary @ 0.9093</div>
+        </td>
+        <td class="why">check the corpus for Python</td>
+        <td class="num">0 ms</td>
+        <td class="num">200&nbsp;in / 40&nbsp;out</td>
+        <td>—</td>
+      </tr>
+      
+      <tr class="">
+        <td class="num">3</td>
+        <td>
+          <code>retrieve_evidence</code>
+          <div class="args">{&#39;requirement&#39;: &#39;Production PostgreSQL including query plans and indexing&#39;, &#39;k&#39;: 3}</div>
+          <div class="result-summary">3 passages, top resume#databases @ 7.8021</div>
+        </td>
+        <td class="why">check the corpus for Postgres</td>
+        <td class="num">0 ms</td>
+        <td class="num">200&nbsp;in / 40&nbsp;out</td>
+        <td>—</td>
+      </tr>
+      
+      <tr class="">
+        <td class="num">4</td>
+        <td>
+          <code>retrieve_evidence</code>
+          <div class="args">{&#39;requirement&#39;: &#39;Kubernetes in production&#39;, &#39;k&#39;: 3}</div>
+          <div class="result-summary">3 passages, top project-observability-pipeline#kubernetes-and-deployment @ 3.2996</div>
+        </td>
+        <td class="why">check the corpus for Kubernetes</td>
+        <td class="num">0 ms</td>
+        <td class="num">200&nbsp;in / 40&nbsp;out</td>
+        <td>—</td>
+      </tr>
+      
+      <tr class="">
+        <td class="num">5</td>
+        <td>
+          <code>score_match</code>
+          
+          <div class="result-summary">1/2 hard requirements met</div>
+        </td>
+        <td class="why">every requirement now has retrieval behind it</td>
+        <td class="num">0 ms</td>
+        <td class="num">320&nbsp;in / 100&nbsp;out</td>
+        <td>—</td>
+      </tr>
+      
+      <tr class="">
+        <td class="num">6</td>
+        <td>
+          <code>draft_bullets</code>
+          
+          <div class="result-summary">2 suggestions, 1 refused (1 rewritten by the grounding validator)</div>
+        </td>
+        <td class="why">two requirements came back short of met</td>
+        <td class="num">0 ms</td>
+        <td class="num">320&nbsp;in / 100&nbsp;out</td>
+        <td>—</td>
+      </tr>
+      
+      <tr class="">
+        <td class="num">7</td>
+        <td>
+          <code>finish</code>
+          
+          <div class="result-summary">planner ended the run</div>
+        </td>
+        <td class="why">the report and the bullets are both complete</td>
+        <td class="num">0 ms</td>
+        <td class="num">200&nbsp;in / 40&nbsp;out</td>
+        <td>—</td>
+      </tr>
+      
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">7 steps · terminated: <code>complete</code></td>
+        <td class="num">3 ms</td>
+        <td class="num">2220 total</td>
+        <td><span class="rid">065bec0bf1f6402f</span></td>
+      </tr>
+    </tfoot>
+  </table>
+</section>
+
+<p><a class="back" href="/">← Analyse another job description</a></p>
+
+  </main>
+  <footer class="wrap">
+    <p>Decision support, not an auto-applier. A human always presses send.</p>
+  </footer>
+</body>
+</html>

@@ -105,8 +105,11 @@ async def request_context(request: Request, call_next):
 # ---------------------------------------------------------------------------
 
 
-async def execute_run(request: Request, jd_text: str) -> AgentResult:
-    """Run the agent once, then log, count and persist it."""
+async def execute_run(request: Request, jd_text: str) -> tuple[AgentResult, dict[str, Any]]:
+    """Run the agent once, then log, count and persist it.
+
+    Returns the result plus the run metadata the UI needs but the result
+    model does not carry (the role title, the persisted run id)."""
     settings: Settings = request.app.state.settings
     store: RunStore = request.app.state.store
     index = request.app.state.index
@@ -147,7 +150,7 @@ async def execute_run(request: Request, jd_text: str) -> AgentResult:
         total_latency_ms=result.total_latency_ms,
         total_tokens=result.total_tokens,
     )
-    return result
+    return result, {"run_id": run_id, "role_title": captured.get("role_title"), "request_id": request_id}
 
 
 # ---------------------------------------------------------------------------
@@ -162,11 +165,17 @@ async def index(request: Request):
 
 @app.post("/analyse", response_class=HTMLResponse)
 async def analyse(request: Request, jd_text: str = Form(...)):
-    result = await execute_run(request, jd_text)
+    result, meta = await execute_run(request, jd_text)
     return templates.TemplateResponse(
         request,
         "result.html",
-        {"result": result, "jd_text": jd_text, "request_id": get_request_id()},
+        {
+            "result": result,
+            "report": result.report,
+            "jd_text": jd_text,
+            "meta": meta,
+            "request_id": get_request_id(),
+        },
     )
 
 
@@ -176,8 +185,8 @@ async def api_analyse(request: Request):
     jd_text = (body or {}).get("jd_text", "")
     if not jd_text.strip():
         return JSONResponse({"error": "jd_text is required"}, status_code=400)
-    result = await execute_run(request, jd_text)
-    return JSONResponse(result.model_dump())
+    result, meta = await execute_run(request, jd_text)
+    return JSONResponse({**result.model_dump(), "meta": meta})
 
 
 @app.get("/health")

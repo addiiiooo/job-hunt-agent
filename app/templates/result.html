@@ -1,5 +1,113 @@
 {% extends "base.html" %}
+{% block title %}Match report — Job Hunt Agent{% endblock %}
 {% block content %}
-<p>{{ result.report.hard_met }} / {{ result.report.hard_total }} hard requirements met</p>
-<p>{{ result.trace | length }} steps, terminated: {{ result.terminated_reason }}</p>
+
+{% set report = result.report %}
+
+<section class="headline">
+  <p class="score"><strong>{{ report.hard_met }} / {{ report.hard_total }}</strong> hard requirements met</p>
+  {% if meta and meta.role_title %}<p class="role">{{ meta.role_title }}</p>{% endif %}
+  {% if report.summary %}<p class="summary">{{ report.summary }}</p>{% endif %}
+  {% if result.terminated_reason != "complete" %}
+  <p class="banner">This run ended early — <code>{{ result.terminated_reason }}</code>. The results below are what it managed to produce.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Requirements</h2>
+  {% if report.verdicts %}
+  <table class="reqs">
+    <thead>
+      <tr><th scope="col">Requirement</th><th scope="col">Status</th><th scope="col">Cited evidence</th><th scope="col">Rationale</th></tr>
+    </thead>
+    <tbody>
+      {% for v in report.verdicts %}
+      <tr>
+        <td>
+          <span class="req-text">{{ v.requirement.text }}</span>
+          <span class="tags">{{ v.requirement.kind }} · {{ v.requirement.category }}{% if v.requirement.years %} · {{ v.requirement.years }}y{% endif %}</span>
+        </td>
+        <td><span class="pill pill-{{ v.status }}">{{ v.status }}</span></td>
+        <td>
+          {% if v.evidence %}
+            {% for e in v.evidence %}
+            <figure class="ev">
+              <figcaption><code>{{ e.doc_id }}</code> <span class="score">{{ e.score }}</span></figcaption>
+              <blockquote>{{ e.snippet }}</blockquote>
+            </figure>
+            {% endfor %}
+          {% else %}
+            <span class="none">no evidence retrieved</span>
+          {% endif %}
+        </td>
+        <td class="rationale">{{ v.rationale }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="none">No verdicts were produced.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Suggested bullets</h2>
+  <p class="note">Refusals are shown, not hidden. A refusal means the corpus has no evidence for that requirement — which is the honest answer, and the one that survives an interview.</p>
+  {% if result.suggestions %}
+  <ul class="bullets">
+    {% for s in result.suggestions %}
+    <li class="{{ 'refused' if s.refused else 'drafted' }}">
+      <p class="for">for: {{ s.requirement_text }}</p>
+      {% if s.refused %}
+        <p class="refusal"><strong>Refused</strong> — {{ s.refusal_reason or "no reason given" }}</p>
+      {% else %}
+        <p class="bullet">{{ s.bullet }}</p>
+        <p class="grounded">grounded in {% for d in s.grounded_in %}<code>{{ d }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="none">No bullets were drafted in this run.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Trace</h2>
+  <p class="note">Every step the agent took, including the ones that failed. The planner chose each of these; nothing here is a fixed sequence.</p>
+  <table class="trace">
+    <thead>
+      <tr>
+        <th scope="col">#</th><th scope="col">Tool</th><th scope="col">Why chosen</th>
+        <th scope="col">Latency</th><th scope="col">Tokens</th><th scope="col">Error</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in result.trace %}
+      <tr class="{{ 'step-error' if s.error else '' }}">
+        <td class="num">{{ s.index }}</td>
+        <td>
+          <code>{{ s.tool }}</code>
+          {% if s.args %}<div class="args">{{ s.args }}</div>{% endif %}
+          <div class="result-summary">{{ s.result_summary }}</div>
+        </td>
+        <td class="why">{{ s.rationale or "—" }}</td>
+        <td class="num">{{ s.latency_ms }} ms</td>
+        <td class="num">{{ s.input_tokens }}&nbsp;in / {{ s.output_tokens }}&nbsp;out</td>
+        <td>{% if s.error %}<code class="err">{{ s.error }}</code>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">{{ result.trace | length }} steps · terminated: <code>{{ result.terminated_reason }}</code></td>
+        <td class="num">{{ result.total_latency_ms }} ms</td>
+        <td class="num">{{ result.total_tokens }} total</td>
+        <td>{% if meta %}<span class="rid">{{ meta.request_id }}</span>{% endif %}</td>
+      </tr>
+    </tfoot>
+  </table>
+</section>
+
+<p><a class="back" href="/">← Analyse another job description</a></p>
 {% endblock %}
