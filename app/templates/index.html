@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="/analyse">
+  <label for="jd_text">Job description</label>
+  <textarea id="jd_text" name="jd_text" rows="18" required
+            placeholder="Paste the full job description here.">{{ echo or "" }}</textarea>
+  <button type="submit">Analyse</button>
+</form>
+{% if echo %}
+<p class="note">Echoed {{ chars }} characters. The agent lands in phase 4.</p>
+{% endif %}
+{% endblock %}

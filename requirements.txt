@@ -1,0 +1,12 @@
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pydantic==2.13.5
+jinja2==3.1.6
+anthropic==1.2.0
+rank_bm25==0.2.2
+python-multipart==0.0.20
+
+# dev / test
+pytest==9.1.1
+httpx==0.28.1
+ruff==0.14.5
