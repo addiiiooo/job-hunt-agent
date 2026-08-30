@@ -1,0 +1,48 @@
+"""Helpers for scripting the injected Claude client in tests."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from app.agent.client import LLMReply, ToolCall
+
+_counter = {"n": 0}
+
+
+def tool_reply(name: str, payload: dict[str, Any], *, in_tok: int = 120, out_tok: int = 60) -> LLMReply:
+    """An LLMReply that looks like the model filled in one tool call."""
+    _counter["n"] += 1
+    return LLMReply(
+        text="",
+        tool_calls=[ToolCall(id=f"toolu_{_counter['n']:04d}", name=name, input=payload)],
+        input_tokens=in_tok,
+        output_tokens=out_tok,
+        stop_reason="tool_use",
+    )
+
+
+SAMPLE_REQUIREMENTS = {
+    "role_title": "Backend Engineer, Payments Platform",
+    "company": "Northwind Technologies",
+    "requirements": [
+        {"text": "3+ years professional backend engineering experience", "kind": "hard",
+         "category": "experience", "years": 3},
+        {"text": "Strong Python", "kind": "hard", "category": "language", "years": None},
+        {"text": "Production PostgreSQL including query plans and indexing", "kind": "hard",
+         "category": "platform", "years": None},
+        {"text": "Building and consuming REST APIs at scale", "kind": "hard",
+         "category": "experience", "years": None},
+        {"text": "Docker", "kind": "hard", "category": "platform", "years": None},
+        {"text": "CI/CD pipeline experience", "kind": "hard", "category": "platform", "years": None},
+        {"text": "Bachelor's degree in Computer Science or equivalent", "kind": "hard",
+         "category": "education", "years": None},
+        {"text": "Kubernetes in production", "kind": "preferred", "category": "platform",
+         "years": None},
+        {"text": "Payments, ledgers or double-entry accounting knowledge", "kind": "preferred",
+         "category": "domain", "years": None},
+        {"text": "Terraform or another infrastructure-as-code tool", "kind": "preferred",
+         "category": "platform", "years": None},
+        {"text": "On-call ownership of a Tier-1 service", "kind": "preferred",
+         "category": "experience", "years": None},
+    ],
+}

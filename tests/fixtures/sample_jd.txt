@@ -1,0 +1,29 @@
+Backend Engineer, Payments Platform
+Northwind Technologies — Bengaluru (Hybrid)
+
+About the role
+Our Payments Platform team owns the services that move money for 40 million
+customers. You will work on the ledger, the reconciliation pipeline, and the
+public payouts API.
+
+What you will do
+- Design, build and operate Python services behind a high-traffic public API
+- Own reconciliation jobs end to end, from schema design to on-call
+- Partner with risk and compliance teams to ship auditable changes
+
+Requirements
+- 3+ years of professional backend engineering experience
+- Strong Python; you can reason about the standard library without reaching for
+  a search engine
+- Production experience with PostgreSQL, including query plans and indexing
+- Experience building and consuming REST APIs at scale
+- Comfortable with Docker and a CI/CD pipeline
+- Bachelor's degree in Computer Science or equivalent practical experience
+
+Nice to have
+- Exposure to Kubernetes in production
+- Familiarity with payments, ledgers or double-entry accounting
+- Experience with Terraform or another infrastructure-as-code tool
+- Prior on-call ownership of a Tier-1 service
+
+We are an equal opportunity employer.
