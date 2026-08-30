@@ -190,6 +190,27 @@ def test_total_latency_equals_the_sum_of_step_latencies(index):
     assert result.total_latency_ms == sum(s.latency_ms for s in result.trace)
 
 
+def test_latency_reconciles_when_the_numbers_are_not_all_zero(index):
+    """The scripted client is instant, so the plain assertion can hold at 0 == 0.
+
+    This one puts real milliseconds on the clock so the reconciliation is
+    actually exercised."""
+    import time
+
+    inner = ScriptedClient(full_run_script(index))
+
+    class Slow:
+        def complete(self, **kwargs):
+            time.sleep(0.012)
+            return inner.complete(**kwargs)
+
+    result = run(JD, client=Slow(), index=index, settings=cfg())
+
+    assert result.total_latency_ms == sum(s.latency_ms for s in result.trace)
+    assert result.total_latency_ms > 0, "precondition: the run took measurable time"
+    assert all(s.latency_ms > 0 for s in result.trace if s.tool != "retrieve_evidence")
+
+
 def test_latency_still_reconciles_when_steps_fail(index):
     from tests.fakes import planner_reply
 
