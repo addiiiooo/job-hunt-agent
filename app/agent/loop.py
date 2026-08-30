@@ -15,6 +15,7 @@ planner that can see its own failures can route around them.
 from __future__ import annotations
 
 import time
+from contextvars import copy_context
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass, field
@@ -77,6 +78,7 @@ class Context:
     client: ClaudeClient
     settings: Settings
     index: Any
+    emit: Callable[[str, dict[str, Any]], None] = lambda *_a, **_k: None
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +92,15 @@ def _h_parse_requirements(state: RunState, args: dict, ctx: Context, repair_note
     )
     state.requirements = reqs
     hard = len(reqs.hard())
+    ctx.emit(
+        "requirements_parsed",
+        {
+            "role_title": reqs.role_title,
+            "company": reqs.company,
+            "requirement_count": len(reqs.requirements),
+            "hard_count": hard,
+        },
+    )
     return (
         f"{len(reqs.requirements)} requirements ({hard} hard, "
         f"{len(reqs.requirements) - hard} preferred) for '{reqs.role_title}'",
@@ -146,6 +157,12 @@ def _h_draft_bullets(state: RunState, args: dict, ctx: Context, repair_note: str
     state.suggestions = outcome.suggestions
     state.guardrail_rejections = outcome.rejected
 
+    if outcome.rejected_count:
+        ctx.emit(
+            "guardrail_rejected",
+            {"count": outcome.rejected_count, "rejections": outcome.rejected},
+        )
+
     refused = sum(1 for s in outcome.suggestions if s.refused)
     summary = f"{len(outcome.suggestions)} suggestions, {refused} refused"
     if outcome.rejected_count:
@@ -179,7 +196,10 @@ def _with_timeout(fn: Callable[[], Any], seconds: float) -> Any:
     """
     pool = ThreadPoolExecutor(max_workers=1)
     try:
-        future = pool.submit(fn)
+        # copy_context so the request_id ContextVar survives the hop into the
+        # worker thread; without it every log line from inside a tool call
+        # would be orphaned.
+        future = pool.submit(copy_context().run, fn)
         try:
             return future.result(timeout=seconds)
         except FutureTimeout:
@@ -294,7 +314,7 @@ def run(
 ) -> AgentResult:
     """Run the agent to completion, MAX_STEPS, or unrecoverable error."""
     emit = on_event or (lambda *_args, **_kw: None)
-    ctx = Context(client=client, settings=settings, index=index)
+    ctx = Context(client=client, settings=settings, index=index, emit=emit)
     registry = build_registry(ctx)
     schemas = [spec.schema for spec in registry.values()]
 
@@ -394,7 +414,15 @@ def run(
         )
         emit(
             "step_failed" if error_value else "step_ok",
-            {"request_id": request_id, "tool": action.tool, "error": error_value},
+            {
+                "request_id": request_id,
+                "step": len(trace),
+                "tool": action.tool,
+                "latency_ms": plan_ms + t.elapsed_ms,
+                "tokens": action.input_tokens + in_tok + action.output_tokens + out_tok,
+                "error": error_value,
+                "summary": summary,
+            },
         )
     else:
         terminated = "max_steps"

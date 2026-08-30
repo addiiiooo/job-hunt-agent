@@ -35,11 +35,10 @@ def test_health_reports_each_dependency(client):
     assert "status" in body and "model" in body
 
 
-def test_index_and_echo(client):
+def test_index_page_serves_the_form(client):
+    body = client.get("/").text
     assert client.get("/").status_code == 200
-    r = client.post("/analyse", data={"jd_text": "Backend engineer, Python, AWS"})
-    assert r.status_code == 200
-    assert "Backend engineer" in r.text
+    assert 'name="jd_text"' in body and 'action="/analyse"' in body
 
 
 def test_run_store_roundtrip(tmp_path):

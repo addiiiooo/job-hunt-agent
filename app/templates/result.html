@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block content %}
+<p>{{ result.report.hard_met }} / {{ result.report.hard_total }} hard requirements met</p>
+<p>{{ result.trace | length }} steps, terminated: {{ result.terminated_reason }}</p>
+{% endblock %}

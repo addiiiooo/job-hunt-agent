@@ -96,3 +96,51 @@ SMALL_REQUIREMENTS = {
         {"text": R_K8S, "kind": "preferred", "category": "platform", "years": None},
     ],
 }
+
+
+def full_run_script(index: Any) -> list[Any]:
+    """A scripted four-tool run against the real corpus.
+
+    Requirement 1 is met, requirement 2 is partial, requirement 3 is a gap. The
+    model then drafts one properly grounded bullet and one bullet citing a
+    document retrieval never returned, so the guardrail has something to catch.
+    """
+    top_py = index.query(R_PYTHON, k=3)[0].doc_id
+    top_pg = index.query(R_POSTGRES, k=3)[0].doc_id
+    return [
+        planner_reply("parse_requirements", why="the job description is not parsed yet"),
+        tool_reply("emit_requirements", SMALL_REQUIREMENTS),
+        planner_reply("retrieve_evidence", why="check the corpus for Python", requirement=R_PYTHON, k=3),
+        planner_reply("retrieve_evidence", why="check the corpus for Postgres", requirement=R_POSTGRES, k=3),
+        planner_reply("retrieve_evidence", why="check the corpus for Kubernetes", requirement=R_K8S, k=3),
+        planner_reply("score_match", why="every requirement now has retrieval behind it"),
+        tool_reply(
+            "emit_match_report",
+            {
+                "verdicts": [
+                    {"requirement_text": R_PYTHON, "status": "met", "cited_doc_ids": [top_py],
+                     "rationale": "resume describes building FastAPI services in Python"},
+                    {"requirement_text": R_POSTGRES, "status": "partial", "cited_doc_ids": [top_pg],
+                     "rationale": "query-plan work is evidenced, but scale is unstated"},
+                    {"requirement_text": R_K8S, "status": "gap", "cited_doc_ids": [],
+                     "rationale": "no Kubernetes experience appears in the corpus"},
+                ],
+                "summary": "Solid Python and PostgreSQL evidence. No Kubernetes anywhere in the corpus.",
+            },
+        ),
+        planner_reply("draft_bullets", why="two requirements came back short of met"),
+        tool_reply(
+            "emit_bullets",
+            {
+                "suggestions": [
+                    {"requirement_text": R_POSTGRES,
+                     "bullet": "Removed sequential scans from hot paths by reading query plans with EXPLAIN ANALYZE.",
+                     "refused": False, "grounded_in": [top_pg]},
+                    {"requirement_text": R_K8S,
+                     "bullet": "Operated production Kubernetes clusters at scale.",
+                     "refused": False, "grounded_in": ["resume#kubernetes"]},
+                ]
+            },
+        ),
+        planner_reply("finish", why="the report and the bullets are both complete"),
+    ]

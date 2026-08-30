@@ -34,3 +34,34 @@ def client(tmp_path, monkeypatch):
     with TestClient(app) as c:
         yield c
     config.reset_settings_cache()
+
+
+@pytest.fixture(autouse=True)
+def clean_metrics():
+    """Metrics are a process-wide singleton; each test starts from zero."""
+    from app.obs.metrics import METRICS
+
+    METRICS.reset()
+    yield
+    METRICS.reset()
+
+
+@pytest.fixture()
+def scripted(client):
+    """Install a scripted Claude client on the running app."""
+    from app.agent.client import FakeClient
+    from app.main import app
+
+    def install(replies):
+        fake = FakeClient(replies)
+        app.state.client_factory = lambda: fake
+        return fake
+
+    return install
+
+
+@pytest.fixture()
+def corpus_index():
+    from app.corpus.index import CorpusIndex
+
+    return CorpusIndex.from_directory(ROOT / "app" / "corpus" / "documents")
