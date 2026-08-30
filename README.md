@@ -297,7 +297,7 @@ every bullet is refused, which is the system working correctly on an empty
 corpus.
 
 ```bash
-pytest                            # 81 tests, fully offline
+pytest                            # 81 offline tests, ~1.5s; the one live-API test skips without a key
 ruff check app tests scripts
 python scripts/smoke_live.py      # one real API run; needs ANTHROPIC_API_KEY
 python scripts/render_sample.py   # regenerate docs/sample-report.html
