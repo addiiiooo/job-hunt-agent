@@ -11,7 +11,8 @@ trace records the choice.
 from __future__ import annotations
 
 import copy
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from app.agent.client import ClaudeClient
 from app.config import Settings

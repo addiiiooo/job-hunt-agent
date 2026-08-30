@@ -21,11 +21,10 @@ from app.models import (
     Evidence,
     MatchReport,
     Requirement,
-    RequirementVerdict,
     Requirements,
+    RequirementVerdict,
     ScoringOutput,
 )
-
 
 # ---------------------------------------------------------------------------
 # JSON schema helpers

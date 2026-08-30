@@ -12,7 +12,7 @@ from app.agent.client import FakeClient, LLMReply
 from app.agent.loop import call_with_policy, run
 from app.config import Settings
 from app.corpus.index import CorpusIndex
-from app.models import AgentError, ErrorKind
+from app.models import ErrorKind
 from tests.fakes import (
     SAMPLE_REQUIREMENTS,
     APITimeoutError,
@@ -41,7 +41,12 @@ def index():
 
 
 def cfg(**over):
-    base = dict(anthropic_api_key="sk-test", db_path=":memory:", max_steps=12, tool_timeout_s=5.0)
+    base = {
+        "anthropic_api_key": "sk-test",
+        "db_path": ":memory:",
+        "max_steps": 12,
+        "tool_timeout_s": 5.0,
+    }
     base.update(over)
     return Settings(**base)
 

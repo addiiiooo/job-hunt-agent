@@ -9,8 +9,9 @@ wrong is worse than no trace, because it looks complete.
 from __future__ import annotations
 
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any
 
 from app.models import Step
 

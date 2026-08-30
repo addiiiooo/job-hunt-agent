@@ -8,8 +8,9 @@ runs offline and deterministically.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Protocol, Sequence
+from typing import Any, Protocol
 
 from app.models import ErrorKind
 

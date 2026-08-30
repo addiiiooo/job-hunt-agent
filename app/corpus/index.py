@@ -108,7 +108,7 @@ class CorpusIndex:
         self._bm25 = BM25Okapi([tokenize(c.text + " " + c.heading) for c in chunks]) if chunks else None
 
     @classmethod
-    def from_directory(cls, directory: str | Path) -> "CorpusIndex":
+    def from_directory(cls, directory: str | Path) -> CorpusIndex:
         d = Path(directory)
         chunks: list[Chunk] = []
         if d.is_dir():
@@ -137,7 +137,7 @@ class CorpusIndex:
         if self._bm25 is None or not text.strip():
             return []
         scores = self._bm25.get_scores(tokenize(text))
-        ranked = sorted(zip(self.chunks, scores), key=lambda p: p[1], reverse=True)
+        ranked = sorted(zip(self.chunks, scores, strict=False), key=lambda p: p[1], reverse=True)
         out: list[Evidence] = []
         for chunk, score in ranked[: max(0, k)]:
             if score <= 0:

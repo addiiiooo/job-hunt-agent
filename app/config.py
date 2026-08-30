@@ -9,9 +9,9 @@ fields on this model.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from functools import lru_cache
 from pathlib import Path
-from typing import Mapping
 
 from pydantic import BaseModel, Field
 
@@ -41,7 +41,7 @@ class Settings(BaseModel):
     corpus_dir: str = str(_PACKAGE_ROOT / "corpus" / "documents")
 
     @classmethod
-    def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
+    def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
         src = os.environ if env is None else env
         raw = {
             "anthropic_api_key": src.get("ANTHROPIC_API_KEY") or None,

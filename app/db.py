@@ -67,7 +67,7 @@ class RunStore:
             if self._owned:
                 self._conn.close()
 
-    def _connect(self) -> "RunStore._Borrowed":
+    def _connect(self) -> RunStore._Borrowed:
         if self._shared is not None:
             return self._Borrowed(self._shared, owned=False)
         conn = sqlite3.connect(self.path, timeout=5.0)

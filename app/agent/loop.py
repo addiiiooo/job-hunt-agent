@@ -15,11 +15,12 @@ planner that can see its own failures can route around them.
 from __future__ import annotations
 
 import time
-from contextvars import copy_context
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
+from contextvars import copy_context
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from app.agent import guardrail as guardrail_mod
 from app.agent import planner as planner_mod
@@ -229,7 +230,7 @@ def call_with_policy(
 
     while True:
         try:
-            return _with_timeout(lambda: fn(repair_note), settings.tool_timeout_s)
+            return _with_timeout(lambda note=repair_note: fn(note), settings.tool_timeout_s)
         except Exception as exc:
             kind = classify_error(exc)
 
@@ -392,7 +393,9 @@ def run(
         with timed() as t:
             try:
                 summary, in_tok, out_tok = call_with_policy(
-                    lambda note: spec.handler(state, action.args, ctx, note),
+                    lambda note, _spec=spec, _args=action.args: _spec.handler(
+                        state, _args, ctx, note
+                    ),
                     settings,
                     repairable=spec.repairable,
                 )
