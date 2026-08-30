@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+  <title>Job Hunt Agent</title>
+</head>
+<body>
+  <header>
+    <h1>Job Hunt Agent</h1>
+    <button id="settings-toggle" type="button" title="Settings" aria-label="Settings">⚙</button>
+  </header>
+
+  <section id="settings" hidden>
+    <label for="api-base">API base URL</label>
+    <input id="api-base" type="url" placeholder="https://your-app.azurecontainerapps.io" spellcheck="false">
+    <p class="hint">Your deployed instance. The extension asks for permission to
+      talk to this origin and nothing else.</p>
+    <button id="save-settings" type="button" class="primary">Save</button>
+    <p id="settings-status" class="status" role="status"></p>
+  </section>
+
+  <section id="main">
+    <p id="page-hint" class="hint"></p>
+    <button id="analyse" type="button" class="primary">Analyse this page</button>
+    <p class="hint tiny">Reads the text already on screen. Nothing is submitted
+      to the job board — a human always presses send.</p>
+  </section>
+
+  <section id="status-area" hidden>
+    <p id="status" class="status" role="status"></p>
+  </section>
+
+  <section id="result" hidden>
+    <p id="headline"></p>
+    <p id="summary" class="hint"></p>
+    <div id="verdicts"></div>
+    <h2>Suggested bullets</h2>
+    <div id="bullets"></div>
+    <p class="hint tiny" id="trace-note"></p>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>
