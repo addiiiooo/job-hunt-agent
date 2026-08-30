@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 
 from app.agent import loop as loop_mod
-from app.agent.client import FakeClient, LLMReply
+from app.agent.client import LLMReply, ScriptedClient
 from app.agent.loop import call_with_policy, run
 from app.config import Settings
 from app.corpus.index import CorpusIndex
@@ -55,7 +55,7 @@ def cfg(**over):
 
 
 def test_happy_path_produces_a_trace_of_real_steps(index):
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("parse_requirements", why="need the requirements before anything else"),
             tool_reply("emit_requirements", SAMPLE_REQUIREMENTS),
@@ -79,7 +79,7 @@ def test_happy_path_produces_a_trace_of_real_steps(index):
 
 
 def test_trace_carries_the_planner_rationale(index):
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("parse_requirements", why="the JD has not been parsed yet"),
             tool_reply("emit_requirements", SAMPLE_REQUIREMENTS),
@@ -93,7 +93,7 @@ def test_trace_carries_the_planner_rationale(index):
 
 def test_call_order_is_the_planner_s_choice_not_hardcoded(index):
     # The planner retrieves *before* parsing. The loop must obey.
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("retrieve_evidence", requirement="PostgreSQL indexing", k=2),
             planner_reply("parse_requirements"),
@@ -106,7 +106,7 @@ def test_call_order_is_the_planner_s_choice_not_hardcoded(index):
 
 
 def test_retrieval_finding_nothing_is_a_result_not_an_error(index):
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("retrieve_evidence", requirement="underwater basket weaving"),
             planner_reply("finish"),
@@ -123,7 +123,7 @@ def test_retrieval_finding_nothing_is_a_result_not_an_error(index):
 def test_loop_terminates_at_max_steps(index):
     # The planner never says finish. Retrieval makes no model call, so each
     # scripted reply is exactly one loop iteration.
-    client = FakeClient([planner_reply("retrieve_evidence", requirement="Python") for _ in range(20)])
+    client = ScriptedClient([planner_reply("retrieve_evidence", requirement="Python") for _ in range(20)])
     result = run(JD, client=client, index=index, settings=cfg(max_steps=3))
 
     assert result.terminated_reason == "max_steps"
@@ -133,14 +133,14 @@ def test_loop_terminates_at_max_steps(index):
 
 
 def test_max_steps_of_one_still_returns_a_well_formed_result(index):
-    client = FakeClient([planner_reply("retrieve_evidence", requirement="Python") for _ in range(5)])
+    client = ScriptedClient([planner_reply("retrieve_evidence", requirement="Python") for _ in range(5)])
     result = run(JD, client=client, index=index, settings=cfg(max_steps=1))
     assert len(result.trace) == 1
     assert result.terminated_reason == "max_steps"
 
 
 def test_repeated_planner_failure_terminates_with_error(index):
-    client = FakeClient([Boom("planner exploded"), Boom("planner exploded again")])
+    client = ScriptedClient([Boom("planner exploded"), Boom("planner exploded again")])
     result = run(JD, client=client, index=index, settings=cfg(max_steps=8))
     assert result.terminated_reason == "error"
     assert [s.tool for s in result.trace] == ["planner", "planner"]
@@ -151,7 +151,7 @@ def test_repeated_planner_failure_terminates_with_error(index):
 
 
 def test_tool_failure_is_recorded_as_a_step_and_the_loop_continues(index):
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("retrieve_evidence", requirement="   ", why="malformed on purpose"),
             planner_reply("parse_requirements", why="recovering after the failed retrieval"),
@@ -167,7 +167,7 @@ def test_tool_failure_is_recorded_as_a_step_and_the_loop_continues(index):
 
 
 def test_unknown_tool_is_recorded_rather_than_raised(index):
-    client = FakeClient([planner_reply("teleport"), planner_reply("finish")])
+    client = ScriptedClient([planner_reply("teleport"), planner_reply("finish")])
     result = run(JD, client=client, index=index, settings=cfg())
     assert result.trace[0].error == ErrorKind.TOOL_EXECUTION.value
     assert "no such tool" in result.trace[0].result_summary
@@ -175,7 +175,7 @@ def test_unknown_tool_is_recorded_rather_than_raised(index):
 
 
 def test_empty_corpus_surfaces_as_corpus_empty(index):
-    client = FakeClient([planner_reply("retrieve_evidence", requirement="Python"), planner_reply("finish")])
+    client = ScriptedClient([planner_reply("retrieve_evidence", requirement="Python"), planner_reply("finish")])
     result = run(JD, client=client, index=CorpusIndex([]), settings=cfg())
     assert result.trace[0].error == ErrorKind.CORPUS_EMPTY.value
 
@@ -231,7 +231,7 @@ def test_schema_failure_is_repaired_exactly_once(index):
     bad = dict(SAMPLE_REQUIREMENTS)
     bad = {**bad, "requirements": [{"text": "x", "kind": "mandatory", "category": "language"}]}
 
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("parse_requirements"),
             tool_reply("emit_requirements", bad),           # invalid -> repair
@@ -249,7 +249,7 @@ def test_schema_failure_is_repaired_exactly_once(index):
 
 def test_schema_failure_twice_is_recorded_as_a_failed_step(index):
     bad = {"role_title": "x", "requirements": [{"text": "x", "kind": "mandatory", "category": "language"}]}
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("parse_requirements"),
             tool_reply("emit_requirements", bad),
@@ -264,14 +264,14 @@ def test_schema_failure_twice_is_recorded_as_a_failed_step(index):
 
 
 def test_planner_gets_a_tool_call_or_we_call_it_a_schema_error(index):
-    client = FakeClient([LLMReply(text="I'd rather not", stop_reason="end_turn"), planner_reply("finish")])
+    client = ScriptedClient([LLMReply(text="I'd rather not", stop_reason="end_turn"), planner_reply("finish")])
     result = run(JD, client=client, index=index, settings=cfg())
     assert result.trace[0].tool == "planner"
     assert result.trace[0].error == ErrorKind.SCHEMA_VALIDATION.value
 
 
 def test_planner_receives_the_trace_so_far(index):
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("retrieve_evidence", requirement="Docker"),
             planner_reply("finish"),
@@ -284,7 +284,7 @@ def test_planner_receives_the_trace_so_far(index):
 
 
 def test_planner_tool_schemas_carry_a_why_and_a_finish_option(index):
-    client = FakeClient([planner_reply("finish")])
+    client = ScriptedClient([planner_reply("finish")])
     run(JD, client=client, index=index, settings=cfg())
     tools = client.calls[0]["tools"]
     names = [t["name"] for t in tools]
@@ -295,7 +295,7 @@ def test_planner_tool_schemas_carry_a_why_and_a_finish_option(index):
 
 
 def test_why_is_stripped_before_reaching_the_tool(index):
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("retrieve_evidence", why="looking for Python", requirement="Python", k=2),
             planner_reply("finish"),

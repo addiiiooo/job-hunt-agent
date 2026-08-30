@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from app.agent.client import FakeClient
+from app.agent.client import ScriptedClient
 from app.agent.guardrail import REFUSAL_REASON, enforce
 from app.agent.loop import run
 from app.agent.tools import ev_key
@@ -131,7 +131,7 @@ def test_full_run_applies_the_guardrail_before_results_are_shown():
     pg_hits = index.query(R_POSTGRES, k=3)
     top_pg = pg_hits[0].doc_id
 
-    client = FakeClient(
+    client = ScriptedClient(
         [
             planner_reply("parse_requirements", why="the JD is not parsed yet"),
             tool_reply("emit_requirements", SMALL_REQUIREMENTS),

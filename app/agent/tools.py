@@ -262,7 +262,10 @@ def _render_evidence_map(
             body = "  (retrieval ran and found nothing in the corpus)"
         else:
             body = "\n".join(
-                f"  - doc_id: {e.doc_id} (score {e.score})\n    {e.snippet}" for e in hits
+                f"  - doc_id: {e.doc_id} (relevance {round(e.score_normalized * 100)}%"
+                + ("" if e.relevant else ", BELOW THRESHOLD — weak match")
+                + f")\n    {e.snippet}"
+                for e in hits
             )
         blocks.append(f"{header}\n{body}")
     return "\n\n".join(blocks)
@@ -367,7 +370,8 @@ def _assemble_report(
 
     for req in reqs.requirements:
         key = ev_key(req.text)
-        available = {e.doc_id: e for e in evidence_map.get(key, [])}
+        retrieved = evidence_map.get(key, [])
+        available = {e.doc_id for e in retrieved}
         scored = by_key.get(key)
 
         if scored is None:
@@ -375,22 +379,28 @@ def _assemble_report(
                 RequirementVerdict(
                     requirement=req,
                     status="gap",
-                    evidence=[],
+                    evidence=list(retrieved),
                     rationale="No verdict was returned for this requirement.",
                 )
             )
             continue
 
-        cited = [available[d] for d in scored.cited_doc_ids if d in available]
+        # Everything retrieval returned stays on the verdict, flagged with what
+        # the model actually leaned on. Keeping only the cited passages is what
+        # made the report say "no evidence retrieved" for requirements whose
+        # trace showed passages returned one step earlier.
+        cited_ids = {d for d in scored.cited_doc_ids if d in available}
+        evidence = [e.model_copy(update={"cited": e.doc_id in cited_ids}) for e in retrieved]
+
         status = scored.status
-        if status in ("met", "partial") and not cited:
+        if status in ("met", "partial") and not cited_ids:
             # Cited nothing that retrieval actually returned. That is a gap,
             # whatever the model called it.
             status = "gap"
 
         verdicts.append(
             RequirementVerdict(
-                requirement=req, status=status, evidence=cited, rationale=scored.rationale.strip()
+                requirement=req, status=status, evidence=evidence, rationale=scored.rationale.strip()
             )
         )
 
@@ -476,4 +486,19 @@ def draft_bullets(
         model_cls=DraftingOutput,
         repair_note=repair_note,
     )
-    return list(raw.suggestions), in_tok, out_tok
+
+    # Provenance is stamped here, not taken from the model: a refusal that
+    # arrives in this response is by definition the model's own. The validator
+    # stamps its own overrides in guardrail.enforce.
+    suggestions = [
+        BulletSuggestion(
+            requirement_text=d.requirement_text,
+            bullet=d.bullet,
+            refused=d.refused,
+            refusal_reason=d.refusal_reason,
+            refusal_source="model" if d.refused else None,
+            grounded_in=list(d.grounded_in),
+        )
+        for d in raw.suggestions
+    ]
+    return suggestions, in_tok, out_tok

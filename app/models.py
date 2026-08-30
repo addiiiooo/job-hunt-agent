@@ -17,6 +17,7 @@ Kind = Literal["hard", "preferred"]
 Category = Literal["experience", "language", "platform", "domain", "soft", "education"]
 Status = Literal["met", "partial", "gap"]
 TerminatedReason = Literal["complete", "max_steps", "error"]
+RefusalSource = Literal["model", "validator"]
 
 
 class ErrorKind(str, Enum):
@@ -74,9 +75,28 @@ class Requirements(BaseModel):
 
 
 class Evidence(BaseModel):
+    """One retrieved passage.
+
+    ``score`` is the raw BM25 score. It is unbounded and not comparable across
+    queries, so it stays in the model and the trace for debugging and is never
+    shown to a reader. ``score_normalized`` is that score divided by the top
+    score for the same query, which makes it a 0-1 quantity that means "how
+    close to the best hit for this requirement" — the only comparison a reader
+    can actually make.
+
+    ``relevant`` records whether the passage cleared the relevance threshold.
+    ``cited`` records whether the scoring model leaned on it. A passage can be
+    retrieved and irrelevant, or relevant and uncited, and the report needs to
+    tell those apart — conflating them is what made the trace and the report
+    contradict each other.
+    """
+
     doc_id: str
     snippet: str
     score: float
+    score_normalized: float = 0.0
+    relevant: bool = True
+    cited: bool = False
 
 
 class RequirementVerdict(BaseModel):
@@ -104,10 +124,19 @@ class MatchReport(BaseModel):
 
 
 class BulletSuggestion(BaseModel):
+    """A drafted bullet, or a refusal.
+
+    ``refusal_source`` distinguishes the two ways a refusal happens, and the
+    difference matters more than anything else on the page: ``model`` means the
+    drafting model looked at the evidence and declined, ``validator`` means it
+    wrote a claim and the grounding check threw the claim away.
+    """
+
     requirement_text: str
     bullet: str | None = None
     refused: bool = False
     refusal_reason: str | None = None
+    refusal_source: RefusalSource | None = None
     grounded_in: list[str] = Field(default_factory=list)
 
 
@@ -183,5 +212,19 @@ class ScoringOutput(BaseModel):
     summary: str = ""
 
 
+class DraftedBullet(BaseModel):
+    """What the drafting model is allowed to emit.
+
+    Deliberately missing ``refusal_source``: provenance is a fact about who
+    refused, and the model is not in a position to attest to it.
+    """
+
+    requirement_text: str
+    bullet: str | None = None
+    refused: bool = False
+    refusal_reason: str | None = None
+    grounded_in: list[str] = Field(default_factory=list)
+
+
 class DraftingOutput(BaseModel):
-    suggestions: list[BulletSuggestion] = Field(default_factory=list)
+    suggestions: list[DraftedBullet] = Field(default_factory=list)

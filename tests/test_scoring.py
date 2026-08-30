@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from app.agent.client import FakeClient
+from app.agent.client import ScriptedClient
 from app.agent.tools import ev_key, score_match
 from app.config import Settings
 from app.corpus.index import CorpusIndex
@@ -50,7 +50,7 @@ def _scoring(verdicts, summary="ok"):
 def test_totals_are_computed_from_verdicts_not_taken_from_the_model(reqs, evidence_map):
     top_py = evidence_map[ev_key(R_PYTHON)][0].doc_id
     top_pg = evidence_map[ev_key(R_POSTGRES)][0].doc_id
-    client = FakeClient(
+    client = ScriptedClient(
         [
             _scoring(
                 [
@@ -73,7 +73,7 @@ def test_totals_are_computed_from_verdicts_not_taken_from_the_model(reqs, eviden
 
 
 def test_fabricated_citation_is_dropped_and_the_verdict_downgraded(reqs, evidence_map):
-    client = FakeClient(
+    client = ScriptedClient(
         [
             _scoring(
                 [
@@ -91,7 +91,11 @@ def test_fabricated_citation_is_dropped_and_the_verdict_downgraded(reqs, evidenc
     report, _, _ = score_match(reqs, evidence_map, client=client, settings=cfg())
     python_verdict = report.verdicts[0]
 
-    assert python_verdict.evidence == []
+    # The fabricated id buys nothing: no passage is marked cited, and the
+    # verdict is downgraded. The retrieved passages themselves stay on the
+    # verdict, because retrieval really did run.
+    assert not any(e.cited for e in python_verdict.evidence)
+    assert python_verdict.evidence, "retrieved passages must survive a bad citation"
     assert python_verdict.status == "gap", "met with no real citation is a gap"
     assert report.hard_met == 0
 
@@ -111,7 +115,7 @@ def test_citation_belonging_to_another_requirement_does_not_transfer(reqs):
         ev_key(R_POSTGRES): [pg_only],
         ev_key(R_K8S): [],  # retrieval ran for Kubernetes and found nothing
     }
-    client = FakeClient(
+    client = ScriptedClient(
         [
             _scoring(
                 [
@@ -135,7 +139,7 @@ def test_citation_belonging_to_another_requirement_does_not_transfer(reqs):
 
 def test_evidence_is_rehydrated_from_retrieval_not_from_the_model(reqs, evidence_map):
     real = evidence_map[ev_key(R_POSTGRES)][0]
-    client = FakeClient(
+    client = ScriptedClient(
         [
             _scoring(
                 [
@@ -154,7 +158,7 @@ def test_evidence_is_rehydrated_from_retrieval_not_from_the_model(reqs, evidence
 
 
 def test_a_requirement_the_model_skipped_becomes_a_gap(reqs, evidence_map):
-    client = FakeClient(
+    client = ScriptedClient(
         [_scoring([{"requirement_text": R_PYTHON, "status": "gap", "cited_doc_ids": [], "rationale": "n/a"}])]
     )
     report, _, _ = score_match(reqs, evidence_map, client=client, settings=cfg())
@@ -164,7 +168,7 @@ def test_a_requirement_the_model_skipped_becomes_a_gap(reqs, evidence_map):
 
 
 def test_verdict_order_follows_the_requirements_not_the_model(reqs, evidence_map):
-    client = FakeClient(
+    client = ScriptedClient(
         [
             _scoring(
                 [
@@ -181,7 +185,7 @@ def test_verdict_order_follows_the_requirements_not_the_model(reqs, evidence_map
 
 def test_requirement_text_matching_is_whitespace_and_case_insensitive(reqs, evidence_map):
     top_py = evidence_map[ev_key(R_PYTHON)][0].doc_id
-    client = FakeClient(
+    client = ScriptedClient(
         [
             _scoring(
                 [{"requirement_text": "  strong   PYTHON ", "status": "met",
@@ -198,7 +202,7 @@ def test_scoring_without_requirements_is_a_tool_execution_error(evidence_map):
         score_match(
             Requirements(role_title="x", requirements=[]),
             evidence_map,
-            client=FakeClient([]),
+            client=ScriptedClient([]),
             settings=cfg(),
         )
     assert exc.value.kind.value == "tool_execution"

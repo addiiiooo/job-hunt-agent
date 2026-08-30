@@ -24,6 +24,16 @@ _FRONT_MATTER = re.compile(r"\A---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 _HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _TOKEN = re.compile(r"[a-z0-9][a-z0-9+.#_-]*")
 
+# The literal marker shipped in the placeholder corpus. /health looks for it,
+# because a corpus full of TODOs retrieves fluently and answers nothing.
+PLACEHOLDER_MARKER = "TODO: replace"
+
+# A passage is "relevant" if it scores at least this fraction of the best hit
+# for the same query. Relative, not absolute: BM25 scores are unbounded and
+# incomparable across queries, so the only honest normalisation is per-query.
+# The consequence is that the top hit is always 1.0 — see README limitations.
+RELEVANCE_THRESHOLD = 0.35
+
 # Deliberately tiny. An aggressive stoplist on a corpus this small removes
 # signal, not noise.
 _STOPWORDS = {
@@ -131,22 +141,47 @@ class CorpusIndex:
     def is_empty(self) -> bool:
         return not self.chunks
 
+    def placeholder_doc_ids(self) -> list[str]:
+        """Documents still carrying the shipped placeholder marker.
+
+        A corpus of TODOs is worse than an empty one: it retrieves, it scores,
+        and every answer it produces is about nothing.
+        """
+        return sorted({c.doc_id for c in self.chunks if PLACEHOLDER_MARKER in c.text})
+
     # -- retrieval -----------------------------------------------------------
 
-    def query(self, text: str, k: int = 5) -> list[Evidence]:
+    def query(
+        self, text: str, k: int = 5, threshold: float = RELEVANCE_THRESHOLD
+    ) -> list[Evidence]:
+        """Top-k passages, every one of them returned.
+
+        Nothing is dropped for being weak — a weak hit is marked
+        ``relevant=False`` and handed back anyway. Dropping it here is what let
+        the report claim "no evidence retrieved" for a requirement whose trace
+        showed three passages a step earlier. Only a score of exactly zero is
+        excluded, because that means no lexical overlap at all rather than a
+        weak match.
+        """
         if self._bm25 is None or not text.strip():
             return []
         scores = self._bm25.get_scores(tokenize(text))
         ranked = sorted(zip(self.chunks, scores, strict=False), key=lambda p: p[1], reverse=True)
+        hits = [(c, float(s)) for c, s in ranked[: max(0, k)] if s > 0]
+        if not hits:
+            return []
+
+        top = hits[0][1]
         out: list[Evidence] = []
-        for chunk, score in ranked[: max(0, k)]:
-            if score <= 0:
-                continue  # a zero score is "no lexical overlap", not weak evidence
+        for chunk, score in hits:
+            normalized = score / top if top > 0 else 0.0
             out.append(
                 Evidence(
                     doc_id=chunk.chunk_id,
                     snippet=_snippet(chunk),
-                    score=round(float(score), 4),
+                    score=round(score, 4),
+                    score_normalized=round(normalized, 4),
+                    relevant=normalized >= threshold,
                 )
             )
         return out

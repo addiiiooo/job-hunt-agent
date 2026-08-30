@@ -74,11 +74,45 @@ def test_retrieve_evidence_raises_corpus_empty_on_empty_index():
     assert exc.value.kind.value == "corpus_empty"
 
 
-def test_health_reports_corpus_loaded(client):
+def test_health_fails_while_the_corpus_is_still_placeholders(client):
+    """The shipped corpus is placeholder text, and /health must say so.
+
+    A corpus of TODOs is a worse failure than an empty one: it indexes, it
+    retrieves, and every answer it produces is about nothing."""
     body = client.get("/health").json()
-    assert body["checks"]["corpus"]["status"] == "ok"
-    assert body["checks"]["corpus"]["documents"] == 3
+    corpus = body["checks"]["corpus"]
+
+    assert corpus["documents"] == 3, "the documents are loaded"
+    assert corpus["status"] == "fail", "but they are not usable"
+    assert "TODO: replace" in corpus["detail"]
+    assert set(corpus["placeholder_documents"]) == {
+        "resume", "project-ledger-service", "project-observability-pipeline"
+    }
+    assert body["status"] == "degraded"
+
+
+def test_health_is_ok_once_the_corpus_has_real_content(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app import config
+
+    (tmp_path / "resume.md").write_text(
+        "---\nid: resume\ntitle: Resume\n---\n\n"
+        "## Databases\n\nPostgreSQL schema design, indexing and EXPLAIN ANALYZE.\n"
+    )
+    monkeypatch.setenv("CORPUS_DIR", str(tmp_path))
+    monkeypatch.setenv("DB_PATH", str(tmp_path / "r.db"))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    config.reset_settings_cache()
+    from app.main import app
+
+    with TestClient(app) as c:
+        body = c.get("/health").json()
+    config.reset_settings_cache()
+
     assert body["status"] == "ok"
+    assert body["checks"]["corpus"]["status"] == "ok"
+    assert body["checks"]["corpus"]["placeholder_documents"] == []
 
 
 def test_health_fails_loudly_when_corpus_is_empty(tmp_path, monkeypatch):

@@ -12,6 +12,7 @@ import os
 from collections.abc import Mapping
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -33,6 +34,7 @@ class Settings(BaseModel):
     model_config = {"frozen": True}
 
     anthropic_api_key: str | None = None
+    llm_client: Literal["anthropic", "scripted"] = "anthropic"
     model: str = DEFAULT_MODEL
     max_steps: int = Field(default=12, ge=1, le=50)
     tool_timeout_s: float = Field(default=30.0, gt=0)
@@ -45,6 +47,7 @@ class Settings(BaseModel):
         src = os.environ if env is None else env
         raw = {
             "anthropic_api_key": src.get("ANTHROPIC_API_KEY") or None,
+            "llm_client": (src.get("LLM_CLIENT") or "anthropic").strip().lower(),
             "model": src.get("MODEL") or DEFAULT_MODEL,
             "max_steps": src.get("MAX_STEPS") or 12,
             "tool_timeout_s": src.get("TOOL_TIMEOUT_S") or 30.0,
@@ -57,6 +60,11 @@ class Settings(BaseModel):
     @property
     def api_key_present(self) -> bool:
         return bool(self.anthropic_api_key)
+
+    @property
+    def api_key_required(self) -> bool:
+        """Scripted mode makes no API calls, so a missing key is not a fault."""
+        return self.llm_client == "anthropic"
 
     def require_api_key(self) -> str:
         if not self.anthropic_api_key:

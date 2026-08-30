@@ -117,8 +117,13 @@ def _h_retrieve_evidence(state: RunState, args: dict, ctx: Context, repair_note:
     state.evidence_map[ev_key(requirement)] = hits
     if not hits:
         return "no matching passages (corpus has no lexical overlap)", 0, 0
+    relevant = sum(1 for h in hits if h.relevant)
     top = hits[0]
-    return f"{len(hits)} passages, top {top.doc_id} @ {top.score}", 0, 0
+    return (
+        f"{len(hits)} passages, {relevant} above threshold, top {top.doc_id}",
+        0,
+        0,
+    )
 
 
 def _h_score_match(state: RunState, args: dict, ctx: Context, repair_note: str | None):
@@ -321,7 +326,6 @@ def run(
 
     state = RunState(jd_text=jd_text)
     trace = Trace()
-    started = time.perf_counter()
     terminated: str = "complete"
     planner_failures = 0
 
@@ -432,7 +436,11 @@ def run(
         emit("run_finish", {"request_id": request_id, "reason": "max_steps"})
 
     report = state.report or _empty_report(state, terminated)
-    total_ms = int((time.perf_counter() - started) * 1000)
+    # The run's latency is the sum of what it spent on steps, each measured
+    # with perf_counter around its dispatch. Wall-clock would include loop
+    # overhead the trace cannot account for, and a total that does not
+    # reconcile with the rows above it is a total nobody can audit.
+    total_ms = sum(step.latency_ms for step in trace.steps)
 
     return AgentResult(
         report=report,

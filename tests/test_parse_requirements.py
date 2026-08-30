@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from app.agent.client import FakeClient
+from app.agent.client import ScriptedClient
 from app.agent.tools import EMIT_REQUIREMENTS, parse_requirements
 from app.config import Settings
 from app.models import AgentError, Requirements
@@ -27,7 +27,7 @@ def cfg():
 
 
 def test_parses_sample_jd_into_at_least_five_requirements(cfg):
-    client = FakeClient([tool_reply("emit_requirements", SAMPLE_REQUIREMENTS)])
+    client = ScriptedClient([tool_reply("emit_requirements", SAMPLE_REQUIREMENTS)])
     reqs, in_tok, out_tok = parse_requirements(SAMPLE_JD, client=client, settings=cfg)
 
     assert isinstance(reqs, Requirements)
@@ -37,7 +37,7 @@ def test_parses_sample_jd_into_at_least_five_requirements(cfg):
 
 
 def test_output_separates_hard_from_preferred(cfg):
-    client = FakeClient([tool_reply("emit_requirements", SAMPLE_REQUIREMENTS)])
+    client = ScriptedClient([tool_reply("emit_requirements", SAMPLE_REQUIREMENTS)])
     reqs, _, _ = parse_requirements(SAMPLE_JD, client=client, settings=cfg)
     assert len(reqs.hard()) >= 5
     assert any(r.kind == "preferred" for r in reqs.requirements)
@@ -45,7 +45,7 @@ def test_output_separates_hard_from_preferred(cfg):
 
 
 def test_schema_is_forced_as_a_real_tool_definition(cfg):
-    client = FakeClient([tool_reply("emit_requirements", SAMPLE_REQUIREMENTS)])
+    client = ScriptedClient([tool_reply("emit_requirements", SAMPLE_REQUIREMENTS)])
     parse_requirements(SAMPLE_JD, client=client, settings=cfg)
     sent = client.calls[0]
     assert sent["tool_choice"] == {"type": "tool", "name": "emit_requirements"}
@@ -56,14 +56,14 @@ def test_schema_is_forced_as_a_real_tool_definition(cfg):
 def test_missing_tool_call_is_a_schema_validation_error(cfg):
     from app.agent.client import LLMReply
 
-    client = FakeClient([LLMReply(text="I'd rather chat", stop_reason="end_turn")])
+    client = ScriptedClient([LLMReply(text="I'd rather chat", stop_reason="end_turn")])
     with pytest.raises(AgentError) as exc:
         parse_requirements(SAMPLE_JD, client=client, settings=cfg)
     assert exc.value.kind.value == "schema_validation"
 
 
 def test_empty_jd_is_rejected_before_any_model_call(cfg):
-    client = FakeClient([])
+    client = ScriptedClient([])
     with pytest.raises(AgentError):
         parse_requirements("   ", client=client, settings=cfg)
     assert client.calls == []

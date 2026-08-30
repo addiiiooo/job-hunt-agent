@@ -48,7 +48,13 @@ def enforce(
 
     for suggestion in suggestions:
         if suggestion.refused:
-            kept.append(suggestion)
+            # An honest refusal from the model passes through untouched, but its
+            # provenance is pinned so the page can say who refused.
+            kept.append(
+                suggestion
+                if suggestion.refusal_source
+                else suggestion.model_copy(update={"refusal_source": "model"})
+            )
             continue
 
         allowed = {e.doc_id for e in evidence_map.get(ev_key(suggestion.requirement_text), [])}
@@ -80,6 +86,7 @@ def enforce(
                 bullet=None,
                 refused=True,
                 refusal_reason=REFUSAL_REASON,
+                refusal_source="validator",
                 grounded_in=[],
             )
         )

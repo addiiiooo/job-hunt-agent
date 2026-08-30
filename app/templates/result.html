@@ -4,6 +4,13 @@
 
 {% set report = result.report %}
 
+{% if demo_mode %}
+<p class="demo-banner"><strong>Demo mode.</strong> The model responses on this page are
+canned (<code>LLM_CLIENT=scripted</code>). Retrieval, the grounding validator, the trace,
+the metrics and the stored run are all real. Set <code>LLM_CLIENT=anthropic</code> with an
+API key for live model output.</p>
+{% endif %}
+
 <section class="headline">
   <p class="score"><strong>{{ report.hard_met }} / {{ report.hard_total }}</strong> hard requirements met</p>
   {% if meta and meta.role_title %}<p class="role">{{ meta.role_title }}</p>{% endif %}
@@ -29,15 +36,30 @@
         </td>
         <td><span class="pill pill-{{ v.status }}">{{ v.status }}</span></td>
         <td>
-          {% if v.evidence %}
-            {% for e in v.evidence %}
-            <figure class="ev">
-              <figcaption><code>{{ e.doc_id }}</code> <span class="score">{{ e.score }}</span></figcaption>
+          {%- set relevant = v.evidence | selectattr("relevant") | list -%}
+          {%- set weak = v.evidence | rejectattr("relevant") | list -%}
+          {% if not v.evidence %}
+            <span class="none">no passages retrieved</span>
+          {% elif not relevant %}
+            <span class="none">{{ v.evidence | length }} retrieved, none above threshold
+              (top {{ (v.evidence[0].score_normalized * 100) | round | int }}%)</span>
+          {% else %}
+            {% for e in relevant %}
+            {% set pct = (e.score_normalized * 100) | round | int %}
+            <figure class="ev{{ ' is-cited' if e.cited else '' }}">
+              <figcaption>
+                <code>{{ e.doc_id }}</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: {{ pct }}%"></span></span>{{ pct }}%
+                </span>
+                {% if e.cited %}<span class="cited-tag">cited</span>{% endif %}
+              </figcaption>
               <blockquote>{{ e.snippet }}</blockquote>
             </figure>
             {% endfor %}
-          {% else %}
-            <span class="none">no evidence retrieved</span>
+            {% if weak %}
+            <p class="weak-note">+{{ weak | length }} more retrieved below the relevance threshold</p>
+            {% endif %}
           {% endif %}
         </td>
         <td class="rationale">{{ v.rationale }}</td>
@@ -56,10 +78,21 @@
   {% if result.suggestions %}
   <ul class="bullets">
     {% for s in result.suggestions %}
-    <li class="{{ 'refused' if s.refused else 'drafted' }}">
+    <li class="{% if s.refused %}refused{% if s.refusal_source == 'validator' %} override{% endif %}{% else %}drafted{% endif %}">
       <p class="for">for: {{ s.requirement_text }}</p>
       {% if s.refused %}
-        <p class="refusal"><strong>Refused</strong> — {{ s.refusal_reason or "no reason given" }}</p>
+        {% if s.refusal_source == "validator" %}
+        <p class="refusal override">
+          <strong>Overridden by the grounding validator</strong> — the model drafted a bullet
+          for this requirement and cited a document that retrieval never returned for it.
+          The draft was discarded by the code, not by the model. Nothing in your corpus
+          supports this claim.
+        </p>
+        {% else %}
+        <p class="refusal">
+          <strong>Refused by the model</strong> — {{ s.refusal_reason or "no reason given" }}
+        </p>
+        {% endif %}
       {% else %}
         <p class="bullet">{{ s.bullet }}</p>
         <p class="grounded">grounded in {% for d in s.grounded_in %}<code>{{ d }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</p>

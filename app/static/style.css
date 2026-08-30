@@ -93,3 +93,24 @@ code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
   td { border: 0; padding: 4px 0; }
   .reqs td:first-child, .reqs td:nth-child(2), .reqs td:last-child { width: auto; }
 }
+
+/* ---- evidence relevance ---- */
+.ev.is-cited { border-left: 2px solid var(--met); padding-left: 8px; margin-left: -10px; }
+.ev figcaption { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rel { display: inline-flex; align-items: center; gap: 5px; color: var(--muted);
+  font-variant-numeric: tabular-nums; font-size: 11px; }
+.relbar { display: inline-block; width: 38px; height: 4px; border-radius: 2px;
+  background: var(--line); overflow: hidden; }
+.relfill { display: block; height: 100%; background: var(--accent); }
+.cited-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--met); background: var(--met-bg); border-radius: 3px; padding: 1px 5px; }
+.weak-note { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+/* ---- validator override, visually distinct from a model refusal ---- */
+.bullets li.refused.override { border-left: 3px solid var(--partial); background: var(--partial-bg); }
+.refusal.override { color: var(--partial); }
+.refusal.override strong { display: block; margin-bottom: 2px; }
+
+.demo-banner { margin: 0 0 16px; padding: 10px 14px; border-radius: 8px;
+  border: 1px dashed var(--partial); background: var(--partial-bg); color: var(--partial);
+  font-size: 13px; }

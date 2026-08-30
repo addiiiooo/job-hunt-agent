@@ -108,14 +108,19 @@ class AnthropicClient:
 # Error classification — every upstream failure lands in the taxonomy.
 # ---------------------------------------------------------------------------
 
-_TRANSIENT_NAMES = {
+# Retry scope: HTTP 429 and 5xx, plus the transport-level failures that are
+# indistinguishable from a 5xx from the caller's side (a socket that never
+# answered, a request that ran past TOOL_TIMEOUT_S). A 4xx other than 429 is a
+# bug in our request and retrying it just reproduces it.
+_RETRYABLE_NAMES = {
     "APITimeoutError",
     "APIConnectionError",
+    "DeadlineExceededError",
+    "TimeoutError",
     "RateLimitError",
     "InternalServerError",
     "OverloadedError",
     "ServiceUnavailableError",
-    "DeadlineExceededError",
     "RetryableError",
 }
 
@@ -136,15 +141,41 @@ def classify_error(exc: BaseException) -> ErrorKind:
 
 
 def is_transient(exc: BaseException) -> bool:
-    """Worth retrying. A schema-validation failure is not — retrying an
-    identical prompt reproduces it; the loop repairs that one differently."""
-    if type(exc).__name__ in _TRANSIENT_NAMES:
+    """Worth retrying: 429 and 5xx only.
+
+    The status code is authoritative when the SDK gives us one, so a 400 or a
+    401 is never retried however it is named. A schema-validation failure is not
+    transient either — retrying an identical prompt reproduces it, and the loop
+    repairs that one differently.
+    """
+    status = getattr(exc, "status_code", None)
+    if isinstance(status, int):
+        return status == 429 or 500 <= status < 600
+    if type(exc).__name__ in _RETRYABLE_NAMES:
         return True
     return classify_error(exc) in (ErrorKind.UPSTREAM_TIMEOUT, ErrorKind.UPSTREAM_RATE_LIMIT)
 
 
-class FakeClient:
-    """A scripted client for tests and for `scripts/demo_offline.py`.
+def scripted_tool_call(
+    name: str, payload: dict[str, Any], *, input_tokens: int = 0, output_tokens: int = 0
+) -> LLMReply:
+    """Build the reply the API would send if the model had called ``name``."""
+    scripted_tool_call._n = getattr(scripted_tool_call, "_n", 0) + 1  # type: ignore[attr-defined]
+    return LLMReply(
+        tool_calls=[ToolCall(id=f"toolu_{scripted_tool_call._n:04d}", name=name, input=payload)],  # type: ignore[attr-defined]
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        stop_reason="tool_use",
+    )
+
+
+class ScriptedClient:
+    """A client that replays a fixed list of replies instead of calling the API.
+
+    It is what makes the test suite deterministic and offline, and it is also a
+    real runtime mode: ``LLM_CLIENT=scripted`` serves the app with canned model
+    responses over live retrieval, so the deployment is demonstrable without a
+    key and without spending anything.
 
     Give it a list of ``LLMReply`` objects (or callables taking the request
     kwargs and returning one). Each ``complete`` pops the next.
@@ -157,10 +188,14 @@ class FakeClient:
     def complete(self, **kwargs: Any) -> LLMReply:
         self.calls.append(kwargs)
         if not self.replies:
-            raise AssertionError("FakeClient exhausted: the agent made more calls than scripted")
+            raise AssertionError("ScriptedClient exhausted: the agent made more calls than scripted")
         nxt = self.replies.pop(0)
         if isinstance(nxt, BaseException):
             raise nxt
         if callable(nxt):
             return nxt(kwargs)
         return nxt
+
+
+# Kept so older call sites and notebooks do not break on the rename.
+FakeClient = ScriptedClient

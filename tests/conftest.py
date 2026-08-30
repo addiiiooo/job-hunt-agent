@@ -49,11 +49,11 @@ def clean_metrics():
 @pytest.fixture()
 def scripted(client):
     """Install a scripted Claude client on the running app."""
-    from app.agent.client import FakeClient
+    from app.agent.client import ScriptedClient
     from app.main import app
 
     def install(replies):
-        fake = FakeClient(replies)
+        fake = ScriptedClient(replies)
         app.state.client_factory = lambda: fake
         return fake
 

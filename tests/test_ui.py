@@ -43,8 +43,7 @@ def test_requirement_table_has_a_pill_evidence_and_a_rationale(client, scripted,
 
 def test_refusals_are_shown_as_refusals_not_hidden(client, scripted, corpus_index):
     html = _analyse(client, scripted, full_run_script(corpus_index))
-    assert "<strong>Refused</strong>" in html
-    assert "failed grounding validation" in html
+    assert "Overridden by the grounding validator" in html
     assert R_K8S in html
     # the fabricated bullet text must not survive into the page
     assert "Operated production Kubernetes clusters at scale" not in html

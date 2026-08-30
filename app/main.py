@@ -19,7 +19,8 @@ from starlette.concurrency import run_in_threadpool
 
 from app import health
 from app.agent import loop as agent_loop
-from app.agent.client import AnthropicClient
+from app.agent.client import AnthropicClient, ScriptedClient
+from app.agent.demo_script import demo_replies
 from app.config import Settings, get_settings
 from app.corpus.index import CorpusIndex
 from app.db import RunStore
@@ -37,7 +38,12 @@ _HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(_HERE / "templates"))
 
 
-def default_client_factory(settings: Settings) -> Any:
+def default_client_factory(settings: Settings, index: Any = None) -> Any:
+    """One provider, plus a scripted mode that needs no provider at all.
+
+    A fresh ScriptedClient per run, because it consumes its script."""
+    if settings.llm_client == "scripted":
+        return ScriptedClient(demo_replies(index))
     return AnthropicClient(settings.require_api_key(), settings.model)
 
 
@@ -48,13 +54,14 @@ async def lifespan(app: FastAPI):
     app.state.settings = settings
     app.state.store = RunStore(settings.db_path)
     app.state.index = CorpusIndex.from_directory(settings.corpus_dir)
-    app.state.client_factory = lambda: default_client_factory(settings)
+    app.state.client_factory = lambda: default_client_factory(settings, app.state.index)
     log_event(
         "startup",
         model=settings.model,
         corpus_documents=app.state.index.size(),
         corpus_chunks=app.state.index.chunk_count(),
         max_steps=settings.max_steps,
+        llm_client=settings.llm_client,
         api_key_present=settings.api_key_present,
     )
     yield
@@ -174,6 +181,7 @@ async def analyse(request: Request, jd_text: str = Form(...)):
             "report": result.report,
             "jd_text": jd_text,
             "meta": meta,
+            "demo_mode": request.app.state.settings.llm_client == "scripted",
             "request_id": get_request_id(),
         },
     )
