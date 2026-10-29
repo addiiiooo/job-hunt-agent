@@ -5,6 +5,8 @@ runtime mode, so it gets the same treatment as the real one."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -82,10 +84,16 @@ def test_schema_validation_is_not_transient():
 # -- scripted mode as a served runtime --------------------------------------
 
 
+SHIPPED_CORPUS = Path(__file__).resolve().parents[1] / "app" / "corpus" / "documents"
+
+
 @pytest.fixture()
-def demo_client(tmp_path, monkeypatch):
+def demo_client(request, tmp_path, monkeypatch):
+    """Scripted app over the fixture corpus, or over ``request.param`` if given."""
     from app import config
 
+    if getattr(request, "param", None):
+        monkeypatch.setenv("CORPUS_DIR", request.param)
     monkeypatch.setenv("LLM_CLIENT", "scripted")
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.setenv("DB_PATH", str(tmp_path / "runs.db"))
@@ -114,7 +122,12 @@ def test_scripted_mode_runs_the_whole_agent(demo_client):
     assert body["report"]["hard_total"] > 0
 
 
+@pytest.mark.parametrize(
+    "demo_client", [None, str(SHIPPED_CORPUS)], ids=["fixture-corpus", "shipped-corpus"], indirect=True
+)
 def test_scripted_mode_still_enforces_the_guardrail(demo_client):
+    """Over the real corpus too: one that covers every demo requirement once left
+    the demo with no ungrounded draft, and the guardrail silently off-screen."""
     body = demo_client.post("/api/analyse", json={"jd_text": "Backend Engineer."}).json()
     overrides = [s for s in body["suggestions"] if s["refusal_source"] == "validator"]
     assert overrides, "the demo script includes an ungrounded draft on purpose"

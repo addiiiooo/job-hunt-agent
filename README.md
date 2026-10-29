@@ -293,7 +293,7 @@ fluently while answering nothing; the API key is checked only when
 ```json
 {"status":"ok","model":"claude-sonnet-4-5","llm_client":"anthropic","checks":{
   "sqlite":{"status":"ok","detail":"ok","path":"/data/runs.db"},
-  "corpus":{"status":"ok","detail":"ok","documents":3,"chunks":14,"placeholder_documents":[]},
+  "corpus":{"status":"ok","detail":"ok","documents":4,"chunks":44,"placeholder_documents":[]},
   "anthropic_api_key":{"status":"ok","detail":"present"}}}
 ```
 
@@ -329,12 +329,17 @@ export ANTHROPIC_API_KEY=sk-ant-...      # or: export LLM_CLIENT=scripted, and n
 uvicorn app.main:app --reload            # http://127.0.0.1:8000
 ```
 
-**Fill in the corpus first.** `app/corpus/documents/` ships three placeholder
-files — `resume.md` and two `project-*.md` — whose bodies are marked
-`TODO: replace`. Replace them with your real resume and project write-ups,
-keeping the front-matter `id` and the `## ` headings; each heading becomes one
-separately citable chunk. `/health` reports the corpus as failed until you do,
-on purpose.
+**The corpus.** `app/corpus/documents/` holds the resume and three project
+write-ups — the GCP finance platform, the Azure ingestion platform and this
+agent — each written from its repository rather than from the resume. Every `## ` heading is
+one separately citable chunk. Contact details are left out on purpose: snippets
+are rendered on the result page, and the public demo serves it. To use your
+own, replace these files, keeping a front-matter `id` and `## ` sections.
+
+The placeholder template that used to ship here lives in
+`tests/fixtures/corpus/`. The test suite runs against it, so exact retrieval
+assertions never depend on anyone's real documents, and `/health` still fails
+on any document containing `TODO: replace`.
 
 | Variable | Default | Meaning |
 |---|---|---|

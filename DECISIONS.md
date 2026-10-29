@@ -308,6 +308,29 @@ works, which is worse than failing loudly. The check greps for the literal
 missing key as a failure when nothing will ever call the API is a false alarm,
 and a false alarm in a health check trains people to ignore it.
 
+**Tests run against a fixture corpus, not the shipped one.** The placeholder
+template moved to `tests/fixtures/corpus/` when the real resume and project
+write-ups went into `app/corpus/documents/`. Retrieval tests assert exact
+results (`resume#databases` for a PostgreSQL query), which is only possible
+against documents that never change; tying them to the owner's resume would
+make every resume edit a test failure. `conftest.py` assigns `CORPUS_DIR`
+rather than defaulting it, so a value exported in the shell cannot change test
+results. The shipped corpus gets its own tests: no placeholders, every document
+split into sections, no email address or phone number (snippets are rendered on
+the public page), and the scripted demo still showing a validator override over
+it.
+
+**Project write-ups are written from the repositories, not from the resume.**
+Where the two disagree, the write-up says what the repository shows. A corpus
+is the evidence the guardrail grounds against, so it should be the strictest
+source available, not the most flattering one.
+
+**The demo's ungrounded draft no longer depends on a retrieval gap.** It used to
+attach to the first requirement with no relevant passage. The real corpus
+covers all six demo requirements, so the draft — and with it the only visible
+guardrail rejection — silently disappeared. It now takes the first shortfall
+whatever retrieval found.
+
 ## Extension
 
 **Permissions are `activeTab`, `scripting`, `storage` — one more than the brief

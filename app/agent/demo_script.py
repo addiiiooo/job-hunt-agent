@@ -119,22 +119,24 @@ def demo_replies(index: Any) -> list[LLMReply]:
     fabricated_used = False
     for verdict in shortfalls:
         hits = [h for h in hits_by_req[verdict["requirement_text"]] if h.relevant]
-        if hits:
-            suggestions.append({
-                "requirement_text": verdict["requirement_text"],
-                "bullet": f"Work evidenced in {hits[0].doc_id}, written up against this requirement.",
-                "refused": False,
-                "grounded_in": [hits[0].doc_id],
-            })
-        elif not fabricated_used:
+        if not fabricated_used:
             # One deliberately ungrounded draft, so the guardrail is visible in
-            # the demo rather than merely described in the README.
+            # the demo rather than merely described in the README. It takes the
+            # first shortfall whatever retrieval found: a real corpus may leave
+            # no requirement without evidence, and the demo must still show it.
             fabricated_used = True
             suggestions.append({
                 "requirement_text": verdict["requirement_text"],
                 "bullet": "Owned this area end to end in a production environment.",
                 "refused": False,
                 "grounded_in": ["resume#not-a-real-section"],
+            })
+        elif hits:
+            suggestions.append({
+                "requirement_text": verdict["requirement_text"],
+                "bullet": f"Work evidenced in {hits[0].doc_id}, written up against this requirement.",
+                "refused": False,
+                "grounded_in": [hits[0].doc_id],
             })
         else:
             suggestions.append({

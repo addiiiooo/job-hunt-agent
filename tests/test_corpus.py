@@ -5,6 +5,7 @@ part that can be asserted exactly."""
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,9 @@ from app.agent.tools import retrieve_evidence
 from app.corpus.index import CorpusIndex, parse_document, tokenize
 from app.models import AgentError
 
-DOCS = Path(__file__).resolve().parents[1] / "app" / "corpus" / "documents"
+ROOT = Path(__file__).resolve().parents[1]
+DOCS = ROOT / "tests" / "fixtures" / "corpus"
+SHIPPED = ROOT / "app" / "corpus" / "documents"
 
 
 @pytest.fixture(scope="module")
@@ -74,8 +77,8 @@ def test_retrieve_evidence_raises_corpus_empty_on_empty_index():
     assert exc.value.kind.value == "corpus_empty"
 
 
-def test_health_fails_while_the_corpus_is_still_placeholders(client):
-    """The shipped corpus is placeholder text, and /health must say so.
+def test_health_fails_on_a_placeholder_corpus(client):
+    """The fixture corpus is the placeholder template, and /health must say so.
 
     A corpus of TODOs is a worse failure than an empty one: it indexes, it
     retrieves, and every answer it produces is about nothing."""
@@ -113,6 +116,25 @@ def test_health_is_ok_once_the_corpus_has_real_content(tmp_path, monkeypatch):
     assert body["status"] == "ok"
     assert body["checks"]["corpus"]["status"] == "ok"
     assert body["checks"]["corpus"]["placeholder_documents"] == []
+
+
+def test_shipped_corpus_is_real_content():
+    """The corpus the app and the image ship with has no placeholders left.
+
+    This is the corpus the CI container is health-checked against, so a
+    placeholder sneaking back in fails here first, with a clearer message."""
+    index = CorpusIndex.from_directory(SHIPPED)
+    assert index.size() >= 3
+    assert index.placeholder_doc_ids() == []
+    for doc_id in {c.doc_id for c in index.chunks}:
+        assert sum(c.doc_id == doc_id for c in index.chunks) > 1, f"{doc_id} has no sections"
+
+
+def test_shipped_corpus_carries_no_contact_details():
+    """Snippets are rendered on the result page, and the public demo serves it."""
+    text = "\n".join(p.read_text(encoding="utf-8") for p in SHIPPED.glob("*.md"))
+    assert not re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", text), "email address in corpus"
+    assert not re.search(r"\+?\d[\d ]{9,}\d", text), "phone number in corpus"
 
 
 def test_health_fails_loudly_when_corpus_is_empty(tmp_path, monkeypatch):

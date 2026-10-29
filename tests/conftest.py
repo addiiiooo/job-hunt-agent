@@ -12,6 +12,12 @@ if str(ROOT) not in sys.path:
 
 os.environ.setdefault("DB_PATH", ":memory:")
 
+# Tests assert exact retrieval results, so they run against a fixed fixture
+# corpus, never the owner's real documents in app/corpus/documents/. Assigned,
+# not defaulted: a CORPUS_DIR exported in the shell must not change test results.
+FIXTURE_CORPUS = ROOT / "tests" / "fixtures" / "corpus"
+os.environ["CORPUS_DIR"] = str(FIXTURE_CORPUS)
+
 
 @pytest.fixture()
 def settings(tmp_path):
@@ -64,4 +70,4 @@ def scripted(client):
 def corpus_index():
     from app.corpus.index import CorpusIndex
 
-    return CorpusIndex.from_directory(ROOT / "app" / "corpus" / "documents")
+    return CorpusIndex.from_directory(FIXTURE_CORPUS)

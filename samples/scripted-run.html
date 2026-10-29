@@ -142,7 +142,7 @@ API key for live model output.</p>
 
 
 <section class="headline">
-  <p class="score"><strong>2 / 4</strong> hard requirements met</p>
+  <p class="score"><strong>3 / 4</strong> hard requirements met</p>
   <p class="role">Backend Engineer</p>
   <p class="summary">Canned demo verdicts over live retrieval. Strength tracks whatever the loaded corpus actually contains.</p>
   
@@ -162,49 +162,49 @@ API key for live model output.</p>
           <span class="req-text">Strong Python</span>
           <span class="tags">hard · language</span>
         </td>
-        <td><span class="pill pill-gap">gap</span></td>
+        <td><span class="pill pill-partial">partial</span></td>
         <td>
             
             
-            <figure class="ev">
+            <figure class="ev is-cited">
               <figcaption>
-                <code>resume#summary</code>
+                <code>resume#languages</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
                   <span class="relbar"><span class="relfill" style="width: 100%"></span></span>100%
                 </span>
-                
+                <span class="cited-tag">cited</span>
               </figcaption>
-              <blockquote>Resume › Summary — TODO: replace. Backend engineer working primarily in Python, with production ownership of HTTP services and the infrastructure they run on.</blockquote>
+              <blockquote>Resume › Languages — Python, SQL, Go, shell scripting (Bash), PowerShell.</blockquote>
             </figure>
             
             
             <figure class="ev">
               <figcaption>
-                <code>project-observability-pipeline#overview</code>
+                <code>resume#gcp-etl-and-orchestration-pipeline</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
-                  <span class="relbar"><span class="relfill" style="width: 89%"></span></span>89%
+                  <span class="relbar"><span class="relfill" style="width: 85%"></span></span>85%
                 </span>
                 
               </figcaption>
-              <blockquote>Project — Observability Pipeline › Overview — TODO: replace. Structured logging, metrics and trace collection for a set of Python services, built so that one request id threads through every log line it touches.</blockquote>
+              <blockquote>Resume › GCP ETL and orchestration pipeline — Python and SQL batch workflow orchestrated with Airflow DAGs: extract from Cloud Storage, transform in Dataflow, load BigQuery for downstream analytics.</blockquote>
             </figure>
             
             
             <figure class="ev">
               <figcaption>
-                <code>resume#backend-engineering</code>
+                <code>resume#ciburn</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
-                  <span class="relbar"><span class="relfill" style="width: 83%"></span></span>83%
+                  <span class="relbar"><span class="relfill" style="width: 70%"></span></span>70%
                 </span>
                 
               </figcaption>
-              <blockquote>Resume › Backend engineering — TODO: replace. Built and operated REST APIs in Python using FastAPI. Designed request validation, pagination and error contracts. Wrote the service layer and the integration tests that covered it.</blockquote>
+              <blockquote>Resume › ciburn — Open-source Python CLI and GitHub Action that analyzes CI cost by joining workflow YAML to run history. Processed 1,993 public repositories (56,682 jobs, 37,727 API requests, zero errors) and found 7.5% of billed minutes never ran. github.com/addiiiooo/ciburn</blockquote>
             </figure>
             
             
           
         </td>
-        <td class="rationale">nothing in the corpus covers this requirement</td>
+        <td class="rationale">resume#languages is adjacent but does not state the full scope</td>
       </tr>
       
       <tr>
@@ -218,21 +218,43 @@ API key for live model output.</p>
             
             <figure class="ev is-cited">
               <figcaption>
-                <code>resume#databases</code>
+                <code>resume#independent-backend-and-platform-engineer</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
                   <span class="relbar"><span class="relfill" style="width: 100%"></span></span>100%
                 </span>
                 <span class="cited-tag">cited</span>
               </figcaption>
-              <blockquote>Resume › Databases — TODO: replace. Worked with PostgreSQL in production: schema design, migrations, composite indexes, and reading query plans with EXPLAIN ANALYZE to remove sequential scans from hot paths.</blockquote>
+              <blockquote>Resume › Independent backend and platform engineer — Backend / Platform Engineer, Independent, remote, Aug 2025 – present. Contract engagements and self-directed backend and cloud platform work across AWS, GCP and Azure; builds are public on GitHub. - Built a Python backend for financial workloads — a FastAPI service over a streaming ingestion path (Cloud Storage →…</blockquote>
             </figure>
             
             
-            <p class="weak-note">+2 more retrieved below the relevance threshold</p>
+            <figure class="ev">
+              <figcaption>
+                <code>resume#databases</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 91%"></span></span>91%
+                </span>
+                
+              </figcaption>
+              <blockquote>Resume › Databases — Relational data modeling and SQL optimization, BigQuery, Cosmos DB (NoSQL), indexing, partitioning, schema design and migrations.</blockquote>
+            </figure>
+            
+            
+            <figure class="ev">
+              <figcaption>
+                <code>resume#summary</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 82%"></span></span>82%
+                </span>
+                
+              </figcaption>
+              <blockquote>Resume › Summary — Backend engineer with 1+ years building and operating production Python services — REST APIs with FastAPI, event-driven microservices on AWS and GCP, and the data layers behind them. Comfortable owning a service end to end: API and database design, schema and migration work, containerized deploys on Docker and…</blockquote>
+            </figure>
+            
             
           
         </td>
-        <td class="rationale">resume#databases speaks to this requirement directly</td>
+        <td class="rationale">resume#independent-backend-and-platform-engineer speaks to this requirement directly</td>
       </tr>
       
       <tr>
@@ -240,25 +262,49 @@ API key for live model output.</p>
           <span class="req-text">Building and consuming REST APIs at scale</span>
           <span class="tags">hard · experience</span>
         </td>
-        <td><span class="pill pill-partial">partial</span></td>
+        <td><span class="pill pill-met">met</span></td>
         <td>
             
             
             <figure class="ev is-cited">
               <figcaption>
-                <code>resume#backend-engineering</code>
+                <code>resume#backend-and-apis</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
                   <span class="relbar"><span class="relfill" style="width: 100%"></span></span>100%
                 </span>
                 <span class="cited-tag">cited</span>
               </figcaption>
-              <blockquote>Resume › Backend engineering — TODO: replace. Built and operated REST APIs in Python using FastAPI. Designed request validation, pagination and error contracts. Wrote the service layer and the integration tests that covered it.</blockquote>
+              <blockquote>Resume › Backend and APIs — FastAPI, REST API design, microservices, event-driven services (Pub/Sub, SQS-style queues), pytest, schema design and migrations.</blockquote>
+            </figure>
+            
+            
+            <figure class="ev">
+              <figcaption>
+                <code>resume#summary</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 94%"></span></span>94%
+                </span>
+                
+              </figcaption>
+              <blockquote>Resume › Summary — Backend engineer with 1+ years building and operating production Python services — REST APIs with FastAPI, event-driven microservices on AWS and GCP, and the data layers behind them. Comfortable owning a service end to end: API and database design, schema and migration work, containerized deploys on Docker and…</blockquote>
+            </figure>
+            
+            
+            <figure class="ev">
+              <figcaption>
+                <code>resume#certifications</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 51%"></span></span>51%
+                </span>
+                
+              </figcaption>
+              <blockquote>Resume › Certifications — Microsoft DP-700 (Fabric Data Engineer) — exam Sept 2026. Building with the Claude API — Claude Academy, in progress.</blockquote>
             </figure>
             
             
           
         </td>
-        <td class="rationale">resume#backend-engineering is adjacent but does not state the full scope</td>
+        <td class="rationale">resume#backend-and-apis speaks to this requirement directly</td>
       </tr>
       
       <tr>
@@ -272,24 +318,98 @@ API key for live model output.</p>
             
             <figure class="ev is-cited">
               <figcaption>
-                <code>resume#infrastructure-and-delivery</code>
+                <code>resume#platform-and-ci-cd</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
                   <span class="relbar"><span class="relfill" style="width: 100%"></span></span>100%
                 </span>
                 <span class="cited-tag">cited</span>
               </figcaption>
-              <blockquote>Resume › Infrastructure and delivery — TODO: replace. Containerised services with Docker. Built CI/CD pipelines in GitHub Actions covering lint, tests and image publish. Provisioned AWS infrastructure with Terraform.</blockquote>
+              <blockquote>Resume › Platform and CI/CD — Docker, Kubernetes, Terraform, Git, GitHub Actions, Jenkins, Cloud Build, Linux.</blockquote>
+            </figure>
+            
+            
+            <figure class="ev">
+              <figcaption>
+                <code>resume#summary</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 59%"></span></span>59%
+                </span>
+                
+              </figcaption>
+              <blockquote>Resume › Summary — Backend engineer with 1+ years building and operating production Python services — REST APIs with FastAPI, event-driven microservices on AWS and GCP, and the data layers behind them. Comfortable owning a service end to end: API and database design, schema and migration work, containerized deploys on Docker and…</blockquote>
+            </figure>
+            
+            
+            <figure class="ev">
+              <figcaption>
+                <code>resume#independent-backend-and-platform-engineer</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 36%"></span></span>36%
+                </span>
+                
+              </figcaption>
+              <blockquote>Resume › Independent backend and platform engineer — Backend / Platform Engineer, Independent, remote, Aug 2025 – present. Contract engagements and self-directed backend and cloud platform work across AWS, GCP and Azure; builds are public on GitHub. - Built a Python backend for financial workloads — a FastAPI service over a streaming ingestion path (Cloud Storage →…</blockquote>
             </figure>
             
             
           
         </td>
-        <td class="rationale">resume#infrastructure-and-delivery speaks to this requirement directly</td>
+        <td class="rationale">resume#platform-and-ci-cd speaks to this requirement directly</td>
       </tr>
       
       <tr>
         <td>
           <span class="req-text">Kubernetes in production</span>
+          <span class="tags">preferred · platform</span>
+        </td>
+        <td><span class="pill pill-met">met</span></td>
+        <td>
+            
+            
+            <figure class="ev is-cited">
+              <figcaption>
+                <code>resume#summary</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 100%"></span></span>100%
+                </span>
+                <span class="cited-tag">cited</span>
+              </figcaption>
+              <blockquote>Resume › Summary — Backend engineer with 1+ years building and operating production Python services — REST APIs with FastAPI, event-driven microservices on AWS and GCP, and the data layers behind them. Comfortable owning a service end to end: API and database design, schema and migration work, containerized deploys on Docker and…</blockquote>
+            </figure>
+            
+            
+            <figure class="ev">
+              <figcaption>
+                <code>resume#platform-and-ci-cd</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 54%"></span></span>54%
+                </span>
+                
+              </figcaption>
+              <blockquote>Resume › Platform and CI/CD — Docker, Kubernetes, Terraform, Git, GitHub Actions, Jenkins, Cloud Build, Linux.</blockquote>
+            </figure>
+            
+            
+            <figure class="ev">
+              <figcaption>
+                <code>resume#pulse-api</code>
+                <span class="rel" title="relevance, relative to the best passage for this requirement">
+                  <span class="relbar"><span class="relfill" style="width: 47%"></span></span>47%
+                </span>
+                
+              </figcaption>
+              <blockquote>Resume › pulse-api — Go service on Kubernetes: liveness and readiness probes, Prometheus metrics and graceful SIGTERM draining for zero-downtime rolling updates; distroless, non-root, multi-arch Docker image. github.com/addiiiooo/multi-cloud-platform</blockquote>
+            </figure>
+            
+            
+          
+        </td>
+        <td class="rationale">resume#summary speaks to this requirement directly</td>
+      </tr>
+      
+      <tr>
+        <td>
+          <span class="req-text">Terraform or another infrastructure-as-code tool</span>
           <span class="tags">preferred · platform</span>
         </td>
         <td><span class="pill pill-partial">partial</span></td>
@@ -298,56 +418,43 @@ API key for live model output.</p>
             
             <figure class="ev is-cited">
               <figcaption>
-                <code>project-observability-pipeline#kubernetes-and-deployment</code>
+                <code>project-job-hunt-agent#agent-loop-and-tool-calling</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
                   <span class="relbar"><span class="relfill" style="width: 100%"></span></span>100%
                 </span>
                 <span class="cited-tag">cited</span>
               </figcaption>
-              <blockquote>Project — Observability Pipeline › Kubernetes and deployment — TODO: replace. Services deployed to Kubernetes with readiness probes wired to a per-dependency health endpoint rather than a bare 200.</blockquote>
+              <blockquote>Project — Job Hunt Agent › Agent loop and tool calling — A planner-driven, bounded agent loop. Every step is one Claude call that is given the goal, the current run state, the four tools as real tool definitions and a compact trace of everything so far, and returns one tool call or finish. The tools are parse_requirements, retrieve_evidence, score_match and draft_bullets;…</blockquote>
             </figure>
             
             
             <figure class="ev">
               <figcaption>
-                <code>resume#summary</code>
+                <code>resume#platform-and-ci-cd</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
-                  <span class="relbar"><span class="relfill" style="width: 52%"></span></span>52%
+                  <span class="relbar"><span class="relfill" style="width: 89%"></span></span>89%
                 </span>
                 
               </figcaption>
-              <blockquote>Resume › Summary — TODO: replace. Backend engineer working primarily in Python, with production ownership of HTTP services and the infrastructure they run on.</blockquote>
+              <blockquote>Resume › Platform and CI/CD — Docker, Kubernetes, Terraform, Git, GitHub Actions, Jenkins, Cloud Build, Linux.</blockquote>
             </figure>
             
             
             <figure class="ev">
               <figcaption>
-                <code>resume#databases</code>
+                <code>project-job-hunt-agent#constraining-the-model</code>
                 <span class="rel" title="relevance, relative to the best passage for this requirement">
-                  <span class="relbar"><span class="relfill" style="width: 46%"></span></span>46%
+                  <span class="relbar"><span class="relfill" style="width: 72%"></span></span>72%
                 </span>
                 
               </figcaption>
-              <blockquote>Resume › Databases — TODO: replace. Worked with PostgreSQL in production: schema design, migrations, composite indexes, and reading query plans with EXPLAIN ANALYZE to remove sequential scans from hot paths.</blockquote>
+              <blockquote>Project — Job Hunt Agent › Constraining the model — Every model call is forced into a typed schema: each tool is an Anthropic tool definition generated from the Pydantic model it returns, with tool_choice pinned to it, and Pydantic validates at the boundary. A schema validation failure is fed back to the model once as a repair attempt. The model may only cite evidence…</blockquote>
             </figure>
             
             
           
         </td>
-        <td class="rationale">project-observability-pipeline#kubernetes-and-deployment is adjacent but does not state the full scope</td>
-      </tr>
-      
-      <tr>
-        <td>
-          <span class="req-text">Terraform or another infrastructure-as-code tool</span>
-          <span class="tags">preferred · platform</span>
-        </td>
-        <td><span class="pill pill-gap">gap</span></td>
-        <td>
-            <span class="none">no passages retrieved</span>
-          
-        </td>
-        <td class="rationale">nothing in the corpus covers this requirement</td>
+        <td class="rationale">project-job-hunt-agent#agent-loop-and-tool-calling is adjacent but does not state the full scope</td>
       </tr>
       
     </tbody>
@@ -361,32 +468,8 @@ API key for live model output.</p>
   
   <ul class="bullets">
     
-    <li class="drafted">
-      <p class="for">for: Strong Python</p>
-      
-        <p class="bullet">Work evidenced in resume#summary, written up against this requirement.</p>
-        <p class="grounded">grounded in <code>resume#summary</code></p>
-      
-    </li>
-    
-    <li class="drafted">
-      <p class="for">for: Building and consuming REST APIs at scale</p>
-      
-        <p class="bullet">Work evidenced in resume#backend-engineering, written up against this requirement.</p>
-        <p class="grounded">grounded in <code>resume#backend-engineering</code></p>
-      
-    </li>
-    
-    <li class="drafted">
-      <p class="for">for: Kubernetes in production</p>
-      
-        <p class="bullet">Work evidenced in project-observability-pipeline#kubernetes-and-deployment, written up against this requirement.</p>
-        <p class="grounded">grounded in <code>project-observability-pipeline#kubernetes-and-deployment</code></p>
-      
-    </li>
-    
     <li class="refused override">
-      <p class="for">for: Terraform or another infrastructure-as-code tool</p>
+      <p class="for">for: Strong Python</p>
       
         
         <p class="refusal override">
@@ -396,6 +479,14 @@ API key for live model output.</p>
           supports this claim.
         </p>
         
+      
+    </li>
+    
+    <li class="drafted">
+      <p class="for">for: Terraform or another infrastructure-as-code tool</p>
+      
+        <p class="bullet">Work evidenced in project-job-hunt-agent#agent-loop-and-tool-calling, written up against this requirement.</p>
+        <p class="grounded">grounded in <code>project-job-hunt-agent#agent-loop-and-tool-calling</code></p>
       
     </li>
     
@@ -423,7 +514,7 @@ API key for live model output.</p>
           <div class="result-summary">6 requirements (4 hard, 2 preferred) for &#39;Backend Engineer&#39;</div>
         </td>
         <td class="why">the posting has not been parsed yet</td>
-        <td class="num">3 ms</td>
+        <td class="num">0 ms</td>
         <td class="num">1080&nbsp;in / 275&nbsp;out</td>
         <td>—</td>
       </tr>
@@ -433,10 +524,10 @@ API key for live model output.</p>
         <td>
           <code>retrieve_evidence</code>
           <div class="args">{&#39;requirement&#39;: &#39;Strong Python&#39;, &#39;k&#39;: 3}</div>
-          <div class="result-summary">3 passages, 3 above threshold, top resume#summary</div>
+          <div class="result-summary">3 passages, 3 above threshold, top resume#languages</div>
         </td>
         <td class="why">look for corpus evidence of: Strong Python</td>
-        <td class="num">2 ms</td>
+        <td class="num">0 ms</td>
         <td class="num">180&nbsp;in / 35&nbsp;out</td>
         <td>—</td>
       </tr>
@@ -446,7 +537,7 @@ API key for live model output.</p>
         <td>
           <code>retrieve_evidence</code>
           <div class="args">{&#39;requirement&#39;: &#39;Production PostgreSQL including query plans and indexing&#39;, &#39;k&#39;: 3}</div>
-          <div class="result-summary">3 passages, 1 above threshold, top resume#databases</div>
+          <div class="result-summary">3 passages, 3 above threshold, top resume#independent-backend-and-platform-engineer</div>
         </td>
         <td class="why">look for corpus evidence of: Production PostgreSQL including query plans and indexing</td>
         <td class="num">0 ms</td>
@@ -459,7 +550,7 @@ API key for live model output.</p>
         <td>
           <code>retrieve_evidence</code>
           <div class="args">{&#39;requirement&#39;: &#39;Building and consuming REST APIs at scale&#39;, &#39;k&#39;: 3}</div>
-          <div class="result-summary">1 passages, 1 above threshold, top resume#backend-engineering</div>
+          <div class="result-summary">3 passages, 3 above threshold, top resume#backend-and-apis</div>
         </td>
         <td class="why">look for corpus evidence of: Building and consuming REST APIs at scale</td>
         <td class="num">0 ms</td>
@@ -472,7 +563,7 @@ API key for live model output.</p>
         <td>
           <code>retrieve_evidence</code>
           <div class="args">{&#39;requirement&#39;: &#39;Docker and a CI/CD pipeline&#39;, &#39;k&#39;: 3}</div>
-          <div class="result-summary">1 passages, 1 above threshold, top resume#infrastructure-and-delivery</div>
+          <div class="result-summary">3 passages, 3 above threshold, top resume#platform-and-ci-cd</div>
         </td>
         <td class="why">look for corpus evidence of: Docker and a CI/CD pipeline</td>
         <td class="num">0 ms</td>
@@ -485,7 +576,7 @@ API key for live model output.</p>
         <td>
           <code>retrieve_evidence</code>
           <div class="args">{&#39;requirement&#39;: &#39;Kubernetes in production&#39;, &#39;k&#39;: 3}</div>
-          <div class="result-summary">3 passages, 3 above threshold, top project-observability-pipeline#kubernetes-and-deployment</div>
+          <div class="result-summary">3 passages, 3 above threshold, top resume#summary</div>
         </td>
         <td class="why">look for corpus evidence of: Kubernetes in production</td>
         <td class="num">0 ms</td>
@@ -498,7 +589,7 @@ API key for live model output.</p>
         <td>
           <code>retrieve_evidence</code>
           <div class="args">{&#39;requirement&#39;: &#39;Terraform or another infrastructure-as-code tool&#39;, &#39;k&#39;: 3}</div>
-          <div class="result-summary">no matching passages (corpus has no lexical overlap)</div>
+          <div class="result-summary">3 passages, 3 above threshold, top project-job-hunt-agent#agent-loop-and-tool-calling</div>
         </td>
         <td class="why">look for corpus evidence of: Terraform or another infrastructure-as-code tool</td>
         <td class="num">0 ms</td>
@@ -511,7 +602,7 @@ API key for live model output.</p>
         <td>
           <code>score_match</code>
           
-          <div class="result-summary">2/4 hard requirements met</div>
+          <div class="result-summary">3/4 hard requirements met</div>
         </td>
         <td class="why">every requirement now has retrieval behind it</td>
         <td class="num">0 ms</td>
@@ -524,7 +615,7 @@ API key for live model output.</p>
         <td>
           <code>draft_bullets</code>
           
-          <div class="result-summary">4 suggestions, 1 refused (1 rewritten by the grounding validator)</div>
+          <div class="result-summary">2 suggestions, 1 refused (1 rewritten by the grounding validator)</div>
         </td>
         <td class="why">several requirements came back short of met</td>
         <td class="num">0 ms</td>
@@ -549,9 +640,9 @@ API key for live model output.</p>
     <tfoot>
       <tr>
         <td colspan="3">10 steps · terminated: <code>complete</code></td>
-        <td class="num">5 ms</td>
+        <td class="num">0 ms</td>
         <td class="num">5570 total</td>
-        <td><span class="rid">ebe0139247e544dd</span></td>
+        <td><span class="rid">f8d5f7ba8b8e4ace</span></td>
       </tr>
     </tfoot>
   </table>
